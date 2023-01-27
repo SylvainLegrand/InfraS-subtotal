@@ -573,7 +573,7 @@ class ActionsSubtotal
 	function ODTSubstitutionLine(&$parameters, &$object, $action, $hookmanager) {
 		global $conf;
 
-		if($action === 'builddoc') {
+		if ($action === 'builddoc' || $action === 'addline' || $action === 'confirm_valid' || $action === 'confirm_paiement') {
 
 			$line = &$parameters['line'];
 			$object = &$parameters['object'];
@@ -898,6 +898,84 @@ class ActionsSubtotal
 		) {
 			$this->_billOrdersAddCheckBoxForTitleBlocks();
 		}
+ 		// InfraS add begin
+       else {
+            // when automatic generate is enabled : keep last selected options from last "builddoc" action (ganerate document manually)
+            if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
+                if (in_array('invoicecard', $contextArray)
+                    || in_array('propalcard', $contextArray)
+                    || in_array('ordercard', $contextArray)
+                    || in_array('ordersuppliercard', $contextArray)
+                    || in_array('invoicesuppliercard', $contextArray)
+                    || in_array('supplier_proposalcard', $contextArray)
+                ) {
+                    $confirm = GETPOST('confirm', 'alpha');
+
+                    if ($action == 'modif'
+                        || ($action == 'confirm_modif' && $confirm == 'yes')
+                        || ($action == 'confirm_edit' && $confirm == 'yes')
+                        || $action == 'reopen'
+                        || (($action == 'confirm_validate' || $action == 'confirm_valid') && $confirm == 'yes')
+                    ) {
+                        if (in_array('invoicecard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_facture';
+                            $sessname2 = 'subtotal_hidedetails_facture';
+                            $sessname3 = 'subtotal_hideprices_facture';
+                        } elseif (in_array('invoicesuppliercard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_facture_fournisseur';
+                            $sessname2 = 'subtotal_hidedetails_facture_fournisseur';
+                            $sessname3 = 'subtotal_hideprices_facture_fournisseur';
+                        } elseif (in_array('propalcard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_propal';
+                            $sessname2 = 'subtotal_hidedetails_propal';
+                            $sessname3 = 'subtotal_hideprices_propal';
+                        } elseif (in_array('supplier_proposalcard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_supplier_proposal';
+                            $sessname2 = 'subtotal_hidedetails_supplier_proposal';
+                            $sessname3 = 'subtotal_hideprices_supplier_proposal';
+                        } elseif (in_array('ordercard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_commande';
+                            $sessname2 = 'subtotal_hidedetails_commande';
+                            $sessname3 = 'subtotal_hideprices_commande';
+                        } elseif (in_array('ordersuppliercard', $contextArray)) {
+                            $sessname = 'subtotal_hideInnerLines_commande_fournisseur';
+                            $sessname2 = 'subtotal_hidedetails_commande_fournisseur';
+                            $sessname3 = 'subtotal_hideprices_commande_fournisseur';
+                        } else {
+                            $sessname = 'subtotal_hideInnerLines_unknown';
+                            $sessname2 = 'subtotal_hidedetails_unknown';
+                            $sessname3 = 'subtotal_hideprices_unknown';
+                        }
+
+                        global $hidedetails; // same name as in global card (proposal, order, invoice, ...)
+                        global $hideprices; // used as global value in this module
+
+                        if (GETPOSTISSET('hideInnerLines')) {
+                            $hideInnerLines = GETPOST('hideInnerLines', 'int');
+                        } else {
+                            $hideInnerLines = isset($_SESSION[$sessname][$object->id]) ? $_SESSION[$sessname][$object->id] : 0;
+                        }
+                        $_POST['hideInnerLines'] = $hideInnerLines;
+
+                        if (GETPOSTISSET('hidedetails')) {
+                            $hidedetails = GETPOST('hidedetails', 'int');
+                        } else {
+                            $hidedetails = isset($_SESSION[$sessname2][$object->id]) ? $_SESSION[$sessname2][$object->id] : (!empty($conf->global->MAIN_GENERATE_DOCUMENTS_HIDE_DETAILS) ? 1 : 0);
+                        }
+                        // no need to set POST value (it's a global value used in global card)
+
+                        if (GETPOSTISSET('hideprices')) {
+                            $hideprices = GETPOST('hideprices', 'int');
+                        } else {
+                            $hidepricesDefaultConf = !empty($conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED) ? $conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED : 0;
+                            $hideprices = isset($_SESSION[$sessname3][$object->id]) ? $_SESSION[$sessname3][$object->id] : $hidepricesDefaultConf;
+                        }
+                        // no need to set POST value (it's a global value used in this module)
+                    }
+                }
+            }
+        }
+		// InfraS add end
 		return 0;
 	}
 
@@ -1116,18 +1194,18 @@ class ActionsSubtotal
 		}
 
 		// POUR LES PDF DE TYPE PDF_EVOLUTION (ceux avec les colonnes configurables)
-		$pdfModelUseColSystem = !empty($object->subtotalPdfModelInfo->cols); // justilise une variable au cas ou le test evolue
+		$pdfModelUseColSystem = !empty($object->context['subtotalPdfModelInfo']->cols); // justilise une variable au cas ou le test evolue
 		if($pdfModelUseColSystem){
 
 			include_once __DIR__ . '/staticPdf.model.php';
 			$staticPdfModel = new ModelePDFStatic($object->db);
-			$staticPdfModel->marge_droite 	= $object->subtotalPdfModelInfo->marge_droite;
-			$staticPdfModel->marge_gauche 	= $object->subtotalPdfModelInfo->marge_gauche;
-			$staticPdfModel->page_largeur 	= $object->subtotalPdfModelInfo->page_largeur;
-			$staticPdfModel->page_hauteur 	= $object->subtotalPdfModelInfo->page_hauteur;
-			$staticPdfModel->cols 			= $object->subtotalPdfModelInfo->cols;
-			$staticPdfModel->defaultTitlesFieldsStyle 	= $object->subtotalPdfModelInfo->defaultTitlesFieldsStyle;
-			$staticPdfModel->defaultContentsFieldsStyle = $object->subtotalPdfModelInfo->defaultContentsFieldsStyle;
+			$staticPdfModel->marge_droite 	= $object->context['subtotalPdfModelInfo']->marge_droite;
+			$staticPdfModel->marge_gauche 	= $object->context['subtotalPdfModelInfo']->marge_gauche;
+			$staticPdfModel->page_largeur 	= $object->context['subtotalPdfModelInfo']->page_largeur;
+			$staticPdfModel->page_hauteur 	= $object->context['subtotalPdfModelInfo']->page_hauteur;
+			$staticPdfModel->cols 			= $object->context['subtotalPdfModelInfo']->cols;
+			$staticPdfModel->defaultTitlesFieldsStyle 	= $object->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle;
+			$staticPdfModel->defaultContentsFieldsStyle = $object->context['subtotalPdfModelInfo']->defaultContentsFieldsStyle;
 			$staticPdfModel->prepareArrayColumnField($object, $langs);
 
 			if(isset($staticPdfModel->cols['totalexcltax']['content']['padding'][0])){
@@ -1200,8 +1278,8 @@ class ActionsSubtotal
 			if ($fillBackground) {
 				$pdf->SetFillColor($backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
 			}
-			$pdf->SetXY($object->subtotalPdfModelInfo->marge_droite, $posy+$backgroundCellPosYOffset);
-			$pdf->MultiCell($object->subtotalPdfModelInfo->page_largeur - $object->subtotalPdfModelInfo->marge_gauche - $object->subtotalPdfModelInfo->marge_droite, $cell_height, '', 0, '', 1);
+			$pdf->SetXY($object->context['subtotalPdfModelInfo']->marge_droite, $posy+$backgroundCellPosYOffset);
+			$pdf->MultiCell($object->context['subtotalPdfModelInfo']->page_largeur - $object->context['subtotalPdfModelInfo']->marge_gauche - $object->context['subtotalPdfModelInfo']->marge_droite, $cell_height, '', 0, '', 1);
 		}
 		else{
 			$pdf->SetXY($posx, $posy+$backgroundCellPosYOffset); //-1 to take into account the entire height of the row
@@ -1384,9 +1462,9 @@ class ActionsSubtotal
 			$bgW = $pdf->page_largeur - $pdf->marge_droite;// historiquement ce sont ces valeurs, mais elles sont la plupart du temps vide
 
 			// POUR LES PDF DE TYPE PDF_EVOLUTION (ceux avec les colonnes configurables)
-			if(!empty($object->subtotalPdfModelInfo->cols) && version_compare('11.0.0', DOL_VERSION, '<')){
-				$bgStartX = $object->subtotalPdfModelInfo->marge_droite;
-				$bgW = $object->subtotalPdfModelInfo->page_largeur - $object->subtotalPdfModelInfo->marge_gauche - $object->subtotalPdfModelInfo->marge_droite;
+			if(!empty($object->context['subtotalPdfModelInfo']->cols) && version_compare('11.0.0', DOL_VERSION, '<')){
+				$bgStartX = $object->context['subtotalPdfModelInfo']->marge_droite;
+				$bgW = $object->context['subtotalPdfModelInfo']->page_largeur - $object->context['subtotalPdfModelInfo']->marge_gauche - $object->context['subtotalPdfModelInfo']->marge_droite;
 			}
 
 			$pdf->SetFillColor($backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
@@ -2129,10 +2207,11 @@ class ActionsSubtotal
 		}
 
 		$TContext	= explode(':', $parameters['context']);	// InfraS add
-		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext)) {	// InfraS add
-
-		$object->subtotalPdfModelInfo = new stdClass(); // see defineColumnFiel method in this class
-		$object->subtotalPdfModelInfo->cols = false;
+		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {	// InfraS add
+		// for compatibility dolibarr < 15
+		if(!empty($object->context)){ $object->context = array(); }
+		$object->context['subtotalPdfModelInfo'] = new stdClass(); // see defineColumnFiel method in this class
+		$object->context['subtotalPdfModelInfo']->cols = false;
 
 
 
@@ -2182,7 +2261,12 @@ class ActionsSubtotal
 
 			foreach($object->lines as $k=>&$line)
 			{
-
+				// InfraS add begin
+                // to keep compatibility with supplier order and old versions (rowid was replaced with id in fetch lines method)
+                if ($line->id > 0) {
+                    $line->rowid = $line->id;
+                }
+				// InfraS add end
 				if($line->product_type==9 && $line->rowid>0)
 				{
 					$fk_parent_line = $line->rowid;
@@ -2339,7 +2423,6 @@ class ActionsSubtotal
 		if($this->isModSubtotalLine($parameters,$object) ){
 
 				global $hideprices;
-
 				if(!empty($hideprices)) {
 					foreach($object->lines as &$line) {
 						if($line->fk_product_type!=9) $line->fk_parent_line = -1;
@@ -2512,7 +2595,7 @@ class ActionsSubtotal
 	 */
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf, $langs, $user, $db, $bc, $inputalsopricewithtax;	// InfraS change
+		global $conf, $langs, $user, $db, $bc, $usercandelete, $toselect, $inputalsopricewithtax;	// InfraS change
 
 		$num = &$parameters['num'];
 		$line = &$parameters['line'];
@@ -2668,6 +2751,18 @@ class ActionsSubtotal
 				<?php if(! empty($conf->global->MAIN_VIEW_LINE_NUMBER)) { ?>
 				<td class="linecolnum"><?php echo $i + 1; ?></td>
 				<?php } ?>
+
+				<?php
+				if ($object->element == 'order_supplier') {
+					$colspan--;
+				}
+				if ($object->element == 'supplier_proposal') {
+					$colspan += 2;
+				}
+				if ($object->element == 'invoice_supplier') {
+					$colspan -= 2;
+				}
+				?>
 
 				<td colspan="<?php echo $colspan; ?>" style="<?php TSubtotal::isFreeText($line) ? '' : 'font-weight:bold;'; ?>  <?php echo ($line->qty>90)?'text-align:right':'' ?> "><?php
 					if($action=='editline' && GETPOST('lineid', 'int') == $line->id && TSubtotal::isModSubtotalLine($line) ) {
@@ -2972,9 +3067,26 @@ class ActionsSubtotal
 			<?php } ?>
 
 
-			<?php  if($action == 'selectlines'){ // dolibarr 8 ?>
-			<td class="linecolcheck" align="center"><input type="checkbox" class="linecheckbox" name="line_checkbox[<?php echo $i+1; ?>]" value="<?php echo $line->id; ?>" ></td>
-			<?php } ?>
+				<?php
+				$Telement = array('propal','commande','facture','supplier_proposal','order_supplier','invoice_supplier');
+
+				if (!empty($conf->global->MASSACTION_CARD_ENABLE_SELECTLINES) && $object->status == $object::STATUS_DRAFT && $usercandelete && in_array($object->element,$Telement)|| $action == 'selectlines' ) { // dolibarr 8
+
+					if ($action !== 'editline' && GETPOST('lineid', 'int') !== $line->id) {
+						$checked = '';
+
+						if (in_array($line->id,$toselect)){
+							$checked = 'checked';
+						}
+
+						if ($action != 'editline') {
+							?>
+							<td class='linecolcheck center'><input type='checkbox' class='linecheckbox' <?php print $checked; ?> name="line_checkbox[<?php print $i + 1; ?>]" value="<?php print $line->id; ?>"></td>
+							<?php
+						}
+					}
+				}
+				?>
 
 			</tr>
 			<?php
@@ -3823,17 +3935,18 @@ class ActionsSubtotal
 	{
 
 		// If this model is column field compatible it will add info to change subtotal behavior
-		$parameters['object']->subtotalPdfModelInfo->cols = $pdfDoc->cols;
+		$parameters['object']->context['subtotalPdfModelInfo']->cols = $pdfDoc->cols;
 
 		// HACK Pour passer les paramettres du model dans les hooks sans infos
-		$parameters['object']->subtotalPdfModelInfo->marge_droite 	= $pdfDoc->marge_droite;
-		$parameters['object']->subtotalPdfModelInfo->marge_gauche 	= $pdfDoc->marge_gauche;
-		$parameters['object']->subtotalPdfModelInfo->page_largeur 	= $pdfDoc->page_largeur;
-		$parameters['object']->subtotalPdfModelInfo->page_hauteur 	= $pdfDoc->page_hauteur;
-		$parameters['object']->subtotalPdfModelInfo->format 		= $pdfDoc->format;
-		$parameters['object']->subtotalPdfModelInfo->defaultTitlesFieldsStyle = $pdfDoc->subtotalPdfModelInfo->defaultTitlesFieldsStyle;
-		$parameters['object']->subtotalPdfModelInfo->defaultContentsFieldsStyle = $pdfDoc->subtotalPdfModelInfo->defaultContentsFieldsStyle;
+		$parameters['object']->context['subtotalPdfModelInfo']->marge_droite 	= $pdfDoc->marge_droite;
+		$parameters['object']->context['subtotalPdfModelInfo']->marge_gauche 	= $pdfDoc->marge_gauche;
+		$parameters['object']->context['subtotalPdfModelInfo']->page_largeur 	= $pdfDoc->page_largeur;
+		$parameters['object']->context['subtotalPdfModelInfo']->page_hauteur 	= $pdfDoc->page_hauteur;
+		$parameters['object']->context['subtotalPdfModelInfo']->format 		= $pdfDoc->format;
+		$parameters['object']->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle = $pdfDoc->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle;
+		$parameters['object']->context['subtotalPdfModelInfo']->defaultContentsFieldsStyle = $pdfDoc->context['subtotalPdfModelInfo']->defaultContentsFieldsStyle;
 
+		return 0;
 	}
 
 	/**

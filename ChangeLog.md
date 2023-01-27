@@ -5,8 +5,17 @@ All notable changes to this project will be documented in this file.
 
 
 
-## Version 3.14 PI 
+## Version 3.15
 
+- NEW : Ajout de massaction de suppression de ligne sur les card *16/11/2022* 3.15.0
+
+## Version 3.14 PI
+
+- FIX : Update info bits on create from hook - *18/11/2022* - 3.14.8 ```PR #273 OpenDsi```  
+  le code permettant de mettre à jour l'info bit semble être obsolète depuis la version 10 de Dolibarr (le mieux serait de remonter sur les versions précédentes et retrouver à partir de quelle version de Dolibarr ce code n'est plus utile)
+  De plus, il ajoute des sauts de lignes lorsque l'objet copié et l'objet source ne possèdent pas le même nombre de lignes. En effet un autre module peut ajouter une ligne et on a alors un saut de ligne supplémentaire.
+- FIX : PHP 8 Compatibility - *19/10/2022* - 3.14.7
+- FIX : Remove transaction in  pdf_writelinedesc *10/11/2022* - 3.14.6 
 - FIX : PHP 8 Compatibility - *13/07/2022* - 3.14.5
 - FIX : Admin déplacement de l'option de récap en zone expérimentale *11/07/2022* 3.14.4
 - FIX : html tag missing for style *11/07/2022* 3.14.3
@@ -48,6 +57,7 @@ All notable changes to this project will be documented in this file.
     
 
 ## Version 3.6
+- FIX : Substitutions ODT ne se font pas pour toutes les actions sur les factures *15/12/2022* 3.6.11
 - FIX : Title lines broken on PDF for documents whose lines use the `desc` field instead of the `label` field (such as
         supplier orders and invoices) *22/11/2021* - 3.6.10
 - FIX : checkbox to add a subtotal title block per order on invoices using the "Bill orders" feature was broken by
