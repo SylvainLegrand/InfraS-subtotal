@@ -898,6 +898,7 @@ class ActionsSubtotal
 		) {
 			$this->_billOrdersAddCheckBoxForTitleBlocks();
 		}
+
  		// InfraS add begin
        else {
             // when automatic generate is enabled : keep last selected options from last "builddoc" action (ganerate document manually)
@@ -975,6 +976,7 @@ class ActionsSubtotal
                 }
             }
         }
+
 		// InfraS add end
 		return 0;
 	}
@@ -2208,6 +2210,7 @@ class ActionsSubtotal
 
 		$TContext	= explode(':', $parameters['context']);	// InfraS add
 		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {	// InfraS add
+
 		// for compatibility dolibarr < 15
 		if(!empty($object->context)){ $object->context = array(); }
 		$object->context['subtotalPdfModelInfo'] = new stdClass(); // see defineColumnFiel method in this class
@@ -2261,11 +2264,14 @@ class ActionsSubtotal
 
 			foreach($object->lines as $k=>&$line)
 			{
+
 				// InfraS add begin
+
                 // to keep compatibility with supplier order and old versions (rowid was replaced with id in fetch lines method)
                 if ($line->id > 0) {
                     $line->rowid = $line->id;
                 }
+
 				// InfraS add end
 				if($line->product_type==9 && $line->rowid>0)
 				{
