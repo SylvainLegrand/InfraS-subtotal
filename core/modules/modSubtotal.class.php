@@ -43,9 +43,11 @@ class modSubtotal extends DolibarrModules
 
         $this->db = $db;
 
-        $this->editor_name = '<b>InfraS - sylvain Legrand</b>';
-        $this->editor_url = 'https://www.infras.fr';
-        // Id for module (must be unique).
+        $this->editor_name		= '<b>InfraS - sylvain Legrand</b>';
+		$this->editor_email		= 'support@infras.fr';
+		$this->editor_web		= 'https://www.infras.fr/';
+		$this->editor_url		= $this->editor_web;
+       // Id for module (must be unique).
         // Use a free id here
         // (See in Home -> System information -> Dolibarr for list of used modules id).
         $this->numero = 104777; // 104000 to 104999 for ATM CONSULTING
@@ -67,11 +69,12 @@ class modSubtotal extends DolibarrModules
         $this->description = "Module permettant l'ajout de sous-totaux et sous-totaux intermédiaires et le déplacement d'une ligne aisée de l'un dans l'autre";
         // Possible values for version are: 'development', 'experimental' or version
 
-        $this->version = '3.23.6 - InfraS';
+        $this->version = '3.24.25';
+
 
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
-		$this->url_last_version = \subtotal\TechATM::getLastModuleVersionUrl($this);
+		$this->url_last_version	= $this->editor_web.'jdownloads/Technique/Modules%20Dolibarr/Changelogs/'.$this->name.'/'.$this->name.'.txt';
 
         // Key used in llx_const table to save module status enabled/disabled
         // (where MYMODULE is value of property name of module in uppercase)
