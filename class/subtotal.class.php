@@ -155,6 +155,7 @@ class TSubtotal {
 			 * @var $object Commande fournisseur
 			 */
 			else if($object->element=='order_supplier') {
+				$object->special_code = TSubtotal::$module_number; // à garder pour la rétrocompatibilité
 			    $res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9, 0, false, null, null, 0, null, 0, '', 0, -1, TSubtotal::$module_number);
 			}
 			/**
@@ -539,6 +540,15 @@ class TSubtotal {
 		}
 
 		return false;
+	}
+
+	/**
+	 * @param $line
+	 * @return bool
+	 */
+	public static function hasBreakPage($line)
+	{
+		return $line->info_bits == 8;
 	}
 
 	/**

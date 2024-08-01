@@ -70,7 +70,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 	function createDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf;
+		global $conf, $langs;
 
 		$dictionnariesTablePrefix = '';
 		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
@@ -85,6 +85,26 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$resql = $this->db->query($sql);
 				if ($resql && ($obj = $this->db->fetch_object($resql))) $value = $obj->content;
 			}
+
+			// Editor wysiwyg
+			$toolbarname = 'dolibarr_notes';
+			$disallowAnyContent = true;
+			if (isset($conf->global->FCKEDITOR_ALLOW_ANY_CONTENT)) {
+				$disallowAnyContent = empty($conf->global->FCKEDITOR_ALLOW_ANY_CONTENT); // Only predefined list of html tags are allowed or all
+			}
+			if (!empty($conf->global->FCKEDITOR_SKIN)) {
+				$skin = $conf->global->FCKEDITOR_SKIN;
+			} else {
+				$skin = 'moono-lisa'; // default with ckeditor 4.6 : moono-lisa
+			}
+			if (!empty($conf->global->FCKEDITOR_ENABLE_SCAYT_AUTOSTARTUP)) {
+				$scaytautostartup = 'scayt_autoStartup: true,';
+			} else {
+				$scaytautostartup = '/*scayt is disable*/'; // Disable by default
+			}
+			$htmlencode_force = preg_match('/_encoded$/', $toolbarname) ? 'true' : 'false';
+			$editor_height = empty($conf->global->MAIN_DOLEDITOR_HEIGHT) ? 100 : $conf->global->MAIN_DOLEDITOR_HEIGHT;
+			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
 
 			?>
 			<script type="text/javascript">
@@ -101,11 +121,49 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 								});
 
 								<?php if (!empty($conf->fckeditor->enabled) && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+									var ckeditor_params = {
+                                    customConfig: ckeditorConfig,
+                                    readOnly: false,
+                                    htmlEncodeOutput: <?php print $htmlencode_force; ?>,
+                                    allowedContent: <?php print $editor_allowContent; ?>,
+                                    extraAllowedContent: 'a[target];div{float,display}',
+                                    disallowedContent : '',
+                                    fullPage : false,
+                                    toolbar: '<?php print $toolbarname; ?>',
+                                    toolbarStartupExpanded: false,
+                                    width: '',
+                                    height: '<?php print $editor_height; ?>',
+                                    skin: '<?php print $skin; ?>',
+                                    <?php print $scaytautostartup; ?>
+                                    scayt_sLang: '<?php print $langs->getDefaultLang(); ?>',
+                                    language: '<?php print $langs->defaultlang; ?>',
+                                    textDirection: '<?php print $langs->trans('DIRECTION'); ?>',
+                                    on :
+                                        {
+                                            instanceReady : function( ev )
+                                            {
+                                                // Output paragraphs as <p>Text</p>.
+                                                this.dataProcessor.writer.setRules( 'p',
+                                                    {
+                                                        indent : false,
+                                                        breakBeforeOpen : true,
+                                                        breakAfterOpen : false,
+                                                        breakBeforeClose : false,
+                                                        breakAfterClose : true
+                                                    });
+                                            }
+                                        },
+                                    disableNativeSpellChecker: false,
+                                    filebrowserBrowseUrl: ckeditorFilebrowserBrowseUrl,
+                                    filebrowserImageBrowseUrl: ckeditorFilebrowserImageBrowseUrl,
+                                    filebrowserWindowWidth: '900',
+                                    filebrowserWindowHeight: '500',
+                                    filebrowserImageWindowWidth: '900',
+                                    filebrowserImageWindowHeight: '500',
+                                };
+
 								$('textarea[name=content]').each(function(i, item) {
-									CKEDITOR.replace(item, {
-										toolbar: 'dolibarr_notes'
-										,customConfig : ckeditorConfig
-									});
+                                    CKEDITOR.replace(item, ckeditor_params);
 								});
 								<?php } ?>
 							}
@@ -2391,6 +2449,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 					if ($hideInnerLines)
 					{
+						// InfraS add begin
+						$hasParentTitle = TSubtotal::getParentTitleOfLine($object, $line->rang);
+						if (empty($hasParentTitle) && empty(TSubtotal::isModSubtotalLine($line))) {	// cette ligne n'est pas dans un titre => on l'affiche
+							$TLines[] = $line;
+						}
+						// InfraS add end
 					    if(getDolGlobalString('SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES'))
 						{
 							if($line->tva_tx != '0.000' && $line->product_type!=9){
@@ -2735,6 +2799,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 		global $conf, $langs, $user, $db, $bc, $usercandelete, $toselect, $inputalsopricewithtax;	// InfraS change
 
+		$lineLabel = "";
 		$num = &$parameters['num'];
 		$line = &$parameters['line'];
 		$i = &$parameters['i'];
@@ -3010,6 +3075,22 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						}
                         if (TSubtotal::isTitle($line)&& !getDolGlobalString('SUBTOTAL_HIDE_OPTIONS_TITLE'))
                         {
+							// InfraS add begin
+							if (!empty(isModEnabled('infraspackplus')) && in_array($object->element, array('propal', 'commande', 'facture'))) {
+								echo '<div>';
+								echo '<input style="vertical-align:sub;"  type="checkbox" name="line-showTableHeaderBefore" id="subtotal-showTableHeaderBefore" value="10" '.((!empty($line->array_options['options_show_table_header_before']) && $line->array_options['options_show_table_header_before'] > 0) ? 'checked="checked"' : '') .' />&nbsp;';
+								echo '<label for="subtotal-showTableHeaderBefore">'.$langs->trans('ShowTableHeaderBefore').'</label>';
+								echo '</div>';
+								echo '<div>';
+								echo '<input style="vertical-align:sub;"  type="checkbox" name="line-printAsList" id="subtotal-printAsList" value="20" '.((!empty($line->array_options['options_print_as_list']) && $line->array_options['options_print_as_list'] > 0) ? 'checked="checked"' : '') .' />&nbsp;';
+								echo '<label for="subtotal-printAsList">'.$langs->trans('PrintAsList').'</label>';
+								echo '</div>';
+								echo '<div>';
+								echo '<input style="vertical-align:sub;"  type="checkbox" name="line-printCondensed" id="subtotal-printCondensed" value="30" '.((!empty($line->array_options['options_print_condensed']) && $line->array_options['options_print_condensed'] > 0) ? 'checked="checked"' : '') .' />&nbsp;';
+								echo '<label for="subtotal-printCondensed">'.$langs->trans('PrintCondensed').'</label>';
+								echo '</div>';
+							}
+							// InfraS add end
                             $form = new Form($db);
                             echo '<div>';
                             echo '<label for="subtotal_tva_tx">'.$form->textwithpicto($langs->trans('subtotal_apply_default_tva'), $langs->trans('subtotal_apply_default_tva_help')).'</label>';
