@@ -5,7 +5,10 @@ require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions.lib.php';
 include_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 require_once __DIR__ . '/../backport/v19/core/class/commonhookactions.class.php';
-if (!empty(isModEnabled('ouvrage')))	dol_include_once('/ouvrage/class/ouvrage.class.php');	// InfraS add
+if (!empty(isModEnabled('ouvrage'))) {
+	dol_include_once('/ouvrage/class/ouvrage.class.php');	// InfraS add
+	dol_include_once('/ouvrage/modules/modOuvrage.class.php');	// Easya add
+}
 
 class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 {
@@ -1117,9 +1120,14 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		$TLineReverse = array_reverse($object->lines);
 
+		// Easya add for inovea ouvrage compat 
+		$ouvrageMod = false;
+		$inoveaFamily = "Inovea Conseil";
+
 		// InfraS add begin
 		$listOuvrages	= array();
 		if (!empty(isModEnabled('ouvrage'))) {
+			$ouvrageMod = new modOuvrage($this->db);
 			// first loop to record all ouvrages
 			foreach($TLineReverse as $l) {
 				$isOuvrage	= Ouvrage::isOuvrage($l) ? 1 : 0;	// ouvrage ??
@@ -1158,20 +1166,38 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                             $progress = ($l->situation_percent - $prev_progress) / 100;
                         }
 
-                        $result = ($sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        $total+= $result;
-                        // TODO check si les 3 lignes du dessous sont corrects
-                        if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) { 
+							$result = $sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress;  // Easya add 
+						} else {
+							$result = ($sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+						}
 
+                        $total+= $result;
+
+						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {  // Easya add 
+							if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress);
+							if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress);
+							if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress);
+						} else {
+							// TODO check si les 3 lignes du dessous sont corrects
+							if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+							if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+							if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+						}
                     }
 					else {	// InfraS add begin
 						if ($l->product_type != 9) {
-										$total += $l->total_ht * $totalQty;	// InfraS change
-										$total_tva += $l->total_tva * $totalQty;	// InfraS change
-										$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
-										$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+							if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {  // Easya add 
+								$total += $l->total_ht;
+								$total_tva += $l->total_tva;
+								$TTotal_tva[$l->tva_tx] += $l->total_tva;
+								$total_ttc += $l->total_ttc;
+							} else {
+								$total += $l->total_ht * $totalQty;	// InfraS change
+								$total_tva += $l->total_tva * $totalQty;	// InfraS change
+								$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
+								$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+							}
 						}
 					}
 					// InfraS add end
@@ -1179,26 +1205,49 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                 else
                 {
 					if ($l->product_type != 9) {
-									$total += $l->total_ht * $totalQty;	// InfraS change
-									$total_tva += $l->total_tva * $totalQty;	// InfraS change
+						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {   // Easya add 
+							$total += $l->total_ht;
+							$total_tva += $l->total_tva;
 
-									if(! isset($TTotal_tva[$l->tva_tx])) {
-										$TTotal_tva[$l->tva_tx] = 0;
-									}
-									$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
+							if(! isset($TTotal_tva[$l->tva_tx])) {
+								$TTotal_tva[$l->tva_tx] = 0;
+							}
+							$TTotal_tva[$l->tva_tx] += $l->total_tva;
 
-									$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
-									// InfraS add begin
-									$vatrate = (string) $l->tva_tx;
-									if (($l->info_bits & 0x01) == 0x01) {
-										$vatrate .= '*';
-									}
-									$vatcode = $l->vat_src_code;
-									if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
-										$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
-									}
-									$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
-									// InfraS add end
+							$total_ttc += $l->total_ttc;
+							// InfraS add begin
+							$vatrate = (string) $l->tva_tx;
+							if (($l->info_bits & 0x01) == 0x01) {
+								$vatrate .= '*';
+							}
+							$vatcode = $l->vat_src_code;
+							if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
+								$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
+							}
+							$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
+							// InfraS add end
+						} else {
+							$total += $l->total_ht * $totalQty;	// InfraS change
+							$total_tva += $l->total_tva * $totalQty;	// InfraS change
+
+							if(! isset($TTotal_tva[$l->tva_tx])) {
+								$TTotal_tva[$l->tva_tx] = 0;
+							}
+							$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
+
+							$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+							// InfraS add begin
+							$vatrate = (string) $l->tva_tx;
+							if (($l->info_bits & 0x01) == 0x01) {
+								$vatrate .= '*';
+							}
+							$vatcode = $l->vat_src_code;
+							if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
+								$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
+							}
+							$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
+							// InfraS add end
+						} 
 					}
                 }
             }
