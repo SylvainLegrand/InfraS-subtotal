@@ -2352,15 +2352,15 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$this->subtotal_show_qty_by_default = true;
 		}
 
-		$TContext	= explode(':', $parameters['context']);	// InfraS add
-		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {	// InfraS add
+		// InfraS change begin
+		$TContext	= explode(':', $parameters['context']);
+		if (in_array('pdfgeneration', $TContext)) {
 			// for compatibility dolibarr < 15
 			if(!empty($object->context)){ $object->context = array(); }
 			$object->context['subtotalPdfModelInfo'] = new stdClass(); // see defineColumnFiel method in this class
 			$object->context['subtotalPdfModelInfo']->cols = false;
-
-
-
+		}
+		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {
 			// var_dump($object->lines);
 			dol_include_once('/subtotal/class/subtotal.class.php');
 
@@ -2551,7 +2551,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					return 0;
 				}
 			}
-		} 	// InfraS add
+		}
+		// InfraS change end
 		return 0;
 	}
 
