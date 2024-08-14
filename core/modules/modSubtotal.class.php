@@ -43,7 +43,7 @@ class modSubtotal extends DolibarrModules
 
         $this->db = $db;
 
-        $this->editor_name		= '<b>InfraS - sylvain Legrand</b>';
+        $this->editor_name		= '<b>InfraS - Sylvain Legrand</b>';
 		$this->editor_email		= 'support@infras.fr';
 		$this->editor_web		= 'https://www.infras.fr/';
 		$this->editor_url		= $this->editor_web;
