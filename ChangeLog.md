@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 
 # Release 3.23 - 18/12/2023
-
+- FIX : Suite a l'issue #379, la création de facture d'acompte avec un montant variable change les qté des lignes générées par le module donc on utilise un trigger pour remettre les bonnes qtés - *18/03/2024* - 3.23.8
 - FIX : Display subtotal with tax when global PDF_PROPAL_SHOW_PRICE_INCL_TAX is enable - *15/01/2024* - 3.23.5
 - FIX : php 8.2 warning - *15/01/2024* - 3.23.4
 - FIX : colum in card if global 'MAIN_NO_INPUT_PRICE_WITH_TAX' is enable
