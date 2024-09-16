@@ -90,11 +90,14 @@ class TSubtotal {
 
 
 	/**
+	 *
+	 * n'est pas appelé lors de la  de facture depuis un object (propal/command)
 	 * @param CommonObject $object
 	 * @param string       $label
 	 * @param int          $qty
 	 * @param int          $rang
 	 * @return int
+	 *
 	 */
 	static function addSubTotalLine(&$object, $label, $qty, $rang=-1) {
 
@@ -119,7 +122,7 @@ class TSubtotal {
 			$desc = '';
 
 			$TNotElements = array ('invoice_supplier', 'order_supplier');
-			if ((float) DOL_VERSION < 6  || $qty==50 && !in_array($object->element, $TNotElements) ) {
+			if ((float) DOL_VERSION < 6  || $qty==50 && !in_array($object->element, $TNotElements)) {
 				$desc = $label;
 				$label = '';
 			}
@@ -133,7 +136,7 @@ class TSubtotal {
                 /** @var FactureFournisseur $object */
 			    $object->special_code = TSubtotal::$module_number;
                 if( (float)DOL_VERSION < 6 ) $rang = $object->line_max() + 1;
-			    $res = $object->addline($label,0,0,0,0,$qty,0,0,'','',0,0,'HT',9,$rang);
+			    $res = $object->addline($label,0,0,0,0,$qty,0,0,'','',0,0,'HT',9,$rang,false,0,null,0,0,'',TSubtotal::$module_number);
 			}
 			/**
 			 * @var $object Propal
@@ -152,8 +155,8 @@ class TSubtotal {
 			 * @var $object Commande fournisseur
 			 */
 			else if($object->element=='order_supplier') {
-			    $object->special_code = TSubtotal::$module_number;
-			    $res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9);
+				$object->special_code = TSubtotal::$module_number; // à garder pour la rétrocompatibilité
+			    $res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9, 0, false, null, null, 0, null, 0, '', 0, -1, TSubtotal::$module_number);
 			}
 			/**
 			 * @var $object Facturerec
@@ -540,13 +543,22 @@ class TSubtotal {
 	}
 
 	/**
+	 * @param $line
+	 * @return bool
+	 */
+	public static function hasBreakPage($line)
+	{
+		return $line->info_bits == 8;
+	}
+
+	/**
 	 * @param CommonObjectLine $line
 	 * @param int              $level
 	 * @return bool
 	 */
 	public static function isTitle(&$line, $level=-1)
 	{
-		$res = $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty <= 9;
+		$res = !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty <= 9;
 		if($res && $level > -1) {
 			return $line->qty == $level;
 		} else return $res;
@@ -560,7 +572,7 @@ class TSubtotal {
 	 */
 	public static function isSubtotal(&$line, $level=-1)
 	{
-	    $res = $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty >= 90;
+	    $res = !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty >= 90;
 	    if($res && $level > -1) {
 	        return self::getNiveau($line) == $level;
 	    } else return $res;
@@ -572,7 +584,7 @@ class TSubtotal {
 	 */
 	public static function isFreeText(&$line)
 	{
-		return $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty == 50;
+		return !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty == 50;
 	}
 
 	/**
@@ -773,7 +785,7 @@ class TSubtotal {
 					if ($withBlockLine) $TLine[] = $line;
 					continue;
 				}
-				elseif ($add_line && self::isModSubtotalLine($line) && self::getNiveau($line) == $level) // Si on tombe sur un sous-total, il faut que ce soit un du même niveau que le titre.
+				elseif ($add_line && static::isModSubtotalLine($line) && static::getNiveau($line) == $level) // Si on tombe sur un sous-total, il faut que ce soit un du même niveau que le titre.
 				{
 					if (self::isSubtotal($line)) {
 						if ($withBlockLine) $TLine[] = $line;
@@ -854,7 +866,7 @@ class TSubtotal {
 
 			case 'order_supplier':
 			    $object->special_code = SELF::$module_number;
-			    if (empty($desc)) $desc = $label;
+			    if (empty($desc) ) $desc = $label;
 			    $res = $object->updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, $price_base_type, $info_bits, $type, 0, $date_start, $date_end, $array_options, $fk_unit);
 			    break;
 
