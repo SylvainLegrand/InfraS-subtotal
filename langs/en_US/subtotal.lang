@@ -21,6 +21,9 @@ YourTextLabel = Write your description
 deleteWithAllLines = Delete all lines included in title
 ConfirmDeleteAllThisLines = Delete %s lines ?
 AddBreakPageBefore = Add pagebreak before this item.
+ShowTableHeaderBefore = ONLY display the table header just before this title
+PrintAsList = Print details of this title as a list
+PrintCondensed = Print the details of this title in summary
 Level = Level
 SubtotalLabel = <b>Subtotal: </b>
 

@@ -156,8 +156,12 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
      */
     public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
-
+		global $user;
        #COMPATIBILITÉ V16
+		require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
+		require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
+
+
         if ($action == 'LINEBILL_UPDATE'){
 			$action = 'LINEBILL_MODIFY';
 		}
@@ -173,11 +177,10 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		if ($action == 'LINEBILL_SUPPLIER_UPDATE'){
 			$action = 'LINEBILL_SUPPLIER_MODIFY';
 		}
-
 		/* Refer to issue #379 */
 		if($action == 'LINEBILL_INSERT'){
 			static $TInvoices = array();
-			if ($TInvoices[$object->fk_facture] === null) {
+			if (!array_key_exists($object->fk_facture, $TInvoices) || (array_key_exists($object->fk_facture, $TInvoices) && $TInvoices[$object->fk_facture] === null)) {
 				$staticInvoice = new Facture($this->db);
 				if ($staticInvoice->fetch($object->fk_facture) < 0){
 					$object->error = $staticInvoice->error;
@@ -199,7 +202,6 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 				}
 			}
 		}
-
 		// Put here code you want to execute when a Dolibarr business events occurs.
         // Data and type of action are stored into $object and $action
         // Users
@@ -430,8 +432,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 				}
 			}
 		}
-
-		// Les lignes libres (y compris les sous-totaux) créées à partir d'une facture modèle n'ont pas la TVA de la ligne du modèle mais la TVA par défaut
+			// Les lignes libres (y compris les sous-totaux) créées à partir d'une facture modèle n'ont pas la TVA de la ligne du modèle mais la TVA par défaut
 		if ($action == 'BILL_CREATE' && $object->fac_rec > 0) {
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 
@@ -828,7 +829,6 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
         } elseif ($action == 'LINEBILL_INSERT') {
-
         	dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
