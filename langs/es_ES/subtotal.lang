@@ -23,7 +23,9 @@ YourTextLabel = Añadir descripción
 deleteWithAllLines = Eliminar todas las líneas con contenido
 ConfirmDeleteAllThisLines = ¿Confirma la eliminación de líneas% s?
 AddBreakPageBefore = Añadir un salto de página delante.
-
+ShowTableHeaderBefore = SÓLO muestra el encabezado de la tabla justo antes de este título
+PrintAsList = Imprimir los detalles de este título como una lista
+PrintCondensed = Imprime los detalles de este título en resumen
 SubtotalLineShowQty = Mostrar cantidad en subtotal
 Level = Nivel
 SubtotalLabel = <b>Subtotal : </b>
