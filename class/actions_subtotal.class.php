@@ -73,6 +73,70 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 
+	function editDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf;
+
+		$dictionnariesTablePrefix = '';
+		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
+
+		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
+		{
+			// Merci Dolibarr de remplacer les textarea par un input text
+			if ((float) DOL_VERSION >= 6.0)
+			{
+				$value = TSubtotal::getHtmlDictionnary();
+			}
+
+			?>
+			<script type="text/javascript">
+				$(function() {
+
+					<?php if ((float) DOL_VERSION >= 6.0) { ?>
+						if ($('input[name=content]').length > 0)
+						{
+							$('input[name=content]').each(function(i, item) {
+								var value = '';
+								// Le dernier item correspond à l'édition
+								if (i == $('input[name=content]').length - 1) {
+									value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+								}
+								$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
+							});
+
+							<?php if (isModEnabled('fckeditor') && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+							$('textarea[name=content]').each(function(i, item) {
+								CKEDITOR.replace(item, {
+									toolbar: 'dolibarr_notes',
+									customConfig: ckeditorConfig,
+									versionCheck: false
+								});
+								});
+								<?php } ?>
+							}
+					<?php } else { ?>
+						// <= 5.0
+						// Le CKEditor est forcé sur la page dictionnaire, pas possible de mettre une valeur custom
+						// petit js qui supprimer le wysiwyg et affiche le textarea car avant la version 6.0 le wysiwyg sur une page de dictionnaire est inexploitable
+						<?php if (isModEnabled('fckeditor')) { ?>
+							CKEDITOR.on('instanceReady', function(ev) {
+								var editor = ev.editor;
+
+								if (editor.name == 'content') // Mon champ en bdd s'appel "content", pas le choix si je veux avoir un textarea sur une page de dictionnaire
+								{
+									editor.element.show();
+									editor.destroy();
+								}
+							});
+						<?php } ?>
+					<?php } ?>
+				});
+			</script>
+			<?php
+		}
+
+		return 0;
+	}
 	function createDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
 	{
 		global $conf, $langs;	// InfraS change
@@ -116,16 +180,18 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$(function() {
 
 					<?php if ((float) DOL_VERSION >= 6.0) { ?>
-							if ($('input[name=content]').length > 0)
-							{
-								$('input[name=content]').each(function(i,item) {
-									var value = '';
-									// Le dernier item correspond à l'édition
-									if (i == $('input[name=content]').length) value = <?php echo json_encode($value); ?>;
-									$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
-								});
+					if ($('input[name=content]').length > 0)
+					{
+						$('input[name=content]').each(function(i, item) {
+							var value = '';
+							// Le dernier item correspond à l'édition
+							if (i == $('input[name=content]').length - 1) {
+								value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+							}
+							$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
+						});
 
-								<?php if (!empty($conf->fckeditor->enabled) && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+						<?php if (!empty($conf->fckeditor->enabled) && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
 									var ckeditor_params = {
 										customConfig: ckeditorConfig,
 										readOnly: false,
@@ -155,7 +221,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 															breakAfterOpen : false,
 															breakBeforeClose : false,
 															breakAfterClose : true
-														});
+							});
 												}
 											},
 										disableNativeSpellChecker: false,
@@ -169,24 +235,24 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 									$('textarea[name=content]').each(function(i, item) {
 										CKEDITOR.replace(item, ckeditor_params);
-									});
-								<?php } ?>
-							}
-					<?php } else { ?>
-						// <= 5.0
-						// Le CKEditor est forcé sur la page dictionnaire, pas possible de mettre une valeur custom
-						// petit js qui supprimer le wysiwyg et affiche le textarea car avant la version 6.0 le wysiwyg sur une page de dictionnaire est inexploitable
-						<?php if (isModEnabled('fckeditor')) { ?>
-							CKEDITOR.on('instanceReady', function(ev) {
-								var editor = ev.editor;
-
-								if (editor.name == 'content') // Mon champ en bdd s'appel "content", pas le choix si je veux avoir un textarea sur une page de dictionnaire
-								{
-									editor.element.show();
-									editor.destroy();
-								}
-							});
+						});
 						<?php } ?>
+					}
+					<?php } else { ?>
+					// <= 5.0
+					// Le CKEditor est forcé sur la page dictionnaire, pas possible de mettre une valeur custom
+					// petit js qui supprimer le wysiwyg et affiche le textarea car avant la version 6.0 le wysiwyg sur une page de dictionnaire est inexploitable
+						<?php if (isModEnabled('fckeditor')) { ?>
+					CKEDITOR.on('instanceReady', function(ev) {
+						var editor = ev.editor;
+
+						if (editor.name == 'content') // Mon champ en bdd s'appel "content", pas le choix si je veux avoir un textarea sur une page de dictionnaire
+						{
+							editor.element.show();
+							editor.destroy();
+						}
+					});
+					<?php } ?>
 					<?php } ?>
 				});
 			</script>
@@ -195,6 +261,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		return 0;
 	}
+
 
 	/** Overloading the formObjectOptions function : replacing the parent's function with the one below
 	 * @param      $parameters  array           meta datas of the hook (context, etc...)
@@ -291,7 +358,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				else if($action==='ask_deleteallline') {
 						$form=new Form($db);
 
-						$lineid = GETPOST('lineid','integer');
+						$lineid = GETPOST('lineid','int');
 						$TIdForGroup = TSubtotal::getLinesFromTitleId($object, $lineid, true);
 
 						$nbLines = count($TIdForGroup);
@@ -416,7 +483,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						{
 							if (typeof use_textarea != 'undefined' && use_textarea && typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined" )
 							{
-								 CKEDITOR.replace( 'sub-total-title', {toolbar: 'dolibarr_details', toolbarStartupExpanded: false} );
+								 CKEDITOR.replace( 'sub-total-title', {toolbar: 'dolibarr_details', versionCheck: false, toolbarStartupExpanded: false} );
 							}
 						}
 						<?php } ?>
@@ -916,7 +983,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                 if ($result < 0) $error++;
 			}
 
-            if ($error) {
+            if ($error > 0) {
                 setEventMessages($object->error, $object->errors, 'errors');
                 $db->rollback();
             } else {
