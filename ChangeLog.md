@@ -1,9 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+## [Non Distribué]
 
-
+## [3.25.31] - 22/11/2024
+- Fix ecrasement de la global $object
 
 # Release 3.24 - 08/04/2024
 - FIX : Module_number missed in subTotal class. function  addSubTotalLine function  in test order_supplier - *26/06/2024* - 3.24.4  
@@ -162,3 +163,5 @@ Changed Dolibarr compatibility range to 15 min - 19 max
 - FIX : Text or title line break PDF *15/04/2021* - 3.5.7
 - NEW Ajouter les lignes 'Titre' , 'total' , 'libre' aux generation d'expedition de commandes expédiables (il faudra supprimer les lignes de sous-total à la main si le besoin s'en fait sentir ) [2021-02-03]
 
+[Non Distribué]: http://git.open-dsi.fr/dolibarr-extension/requestmanager/compare/3.25.31...HEAD
+[3.25.31]: http://git.open-dsi.fr/dolibarr-extension/requestmanager/commits/3.25.31
