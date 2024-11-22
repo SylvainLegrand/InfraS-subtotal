@@ -909,33 +909,26 @@ class TSubtotal {
 		global $db, $object;
 
 		$TTitle = array();
-		if(! empty($object->id) && in_array($object->element, array('propal', 'commande', 'facture'))) {}
-		else {
-			if ($origin_line->element == 'propaldet')
-			{
-				$object = new Propal($db);
-				$object->fetch($origin_line->fk_propal);
-			}
-			else if ($origin_line->element == 'commandedet')
-			{
-				$object = new Commande($db);
-				$object->fetch($origin_line->fk_commande);
-			}
-			else if ($origin_line->element == 'facturedet')
-			{
-				$object = new Facture($db);
-				$object->fetch($origin_line->fk_facture);
-			}
-			else
-			{
+		if (!empty($object->id) && in_array($object->element, array('propal', 'commande', 'facture'))) {
+			$origin = $object;
+		} else {
+			if ($origin_line->element == 'propaldet') {
+				$origin = new Propal($db);
+				$origin->fetch($origin_line->fk_propal);
+			} elseif ($origin_line->element == 'commandedet') {
+				$origin = new Commande($db);
+				$origin->fetch($origin_line->fk_commande);
+			} elseif ($origin_line->element == 'facturedet') {
+				$origin = new Facture($db);
+				$origin->fetch($origin_line->fk_facture);
+			} else {
 				return $TTitle;
 			}
 		}
 
 		// Récupération de la position de la ligne
 		$i = 0;
-		foreach ($object->lines as &$line)
-		{
+		foreach ($origin->lines as &$line) {
 			if ($origin_line->id == $line->id) break;
 			else $i++;
 		}
@@ -943,29 +936,21 @@ class TSubtotal {
 		$i--; // Skip la ligne d'origine
 
 		// Si elle n'est pas en 1ère position, alors on cherche des titres au dessus
-		if ($i >= 0)
-		{
+		if ($i >= 0) {
 			$next_title_lvl_to_skip = 0;
-			for ($y = $i; $y >= 0; $y--)
-			{
+			for ($y = $i; $y >= 0; $y--) {
 				// Si je tombe sur un sous-total, je récupère son niveau pour savoir quel est le prochain niveau de titre que doit ignorer
-				if (self::isSubtotal($object->lines[$y]))
-				{
-					$next_title_lvl_to_skip = self::getNiveau($object->lines[$y]);
-				}
-				elseif (self::isTitle($object->lines[$y]))
-				{
-					if ($object->lines[$y]->qty == $next_title_lvl_to_skip)
-					{
+				if (self::isSubtotal($origin->lines[$y])) {
+					$next_title_lvl_to_skip = self::getNiveau($origin->lines[$y]);
+				} elseif (self::isTitle($origin->lines[$y])) {
+					if ($origin->lines[$y]->qty == $next_title_lvl_to_skip) {
 						$next_title_lvl_to_skip = 0;
 						continue;
-					}
-					else
-					{
-						if (empty($object->lines[$y]->array_options) && !empty($object->lines[$y]->id)) $object->lines[$y]->fetch_optionals();
-						$TTitle[$object->lines[$y]->id] = $object->lines[$y];
+					} else {
+						if (empty($origin->lines[$y]->array_options) && !empty($origin->lines[$y]->id)) $origin->lines[$y]->fetch_optionals();
+						$TTitle[$origin->lines[$y]->id] = $origin->lines[$y];
 
-						if ($object->lines[$y]->qty == 1) break;
+						if ($origin->lines[$y]->qty == 1) break;
 					}
 				}
 			}
