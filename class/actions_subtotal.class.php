@@ -1,4 +1,9 @@
 <?php
+/**
+* SPDX-License-Identifier: GPL-3.0-or-later
+* This file is part of Dolibarr module Subtotal
+*/
+
 
 dol_include_once('/subtotal/class/subtotal.class.php');
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
@@ -71,25 +76,60 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 
-	function createDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
+	function editDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf, $langs;
+		global $conf;
 
 		$dictionnariesTablePrefix = '';
 		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
 
 		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
 		{
-			// Merci Dolibarr de remplacer les textarea par un input text
-			if ((float) DOL_VERSION >= 6.0)
-			{
-				$value = '';
-				$sql = 'SELECT content FROM '.MAIN_DB_PREFIX.'c_subtotal_free_text WHERE rowid = '.GETPOST('rowid', 'int');
-				$resql = $this->db->query($sql);
-				if ($resql && ($obj = $this->db->fetch_object($resql))) $value = $obj->content;
-			}
+            $value = TSubtotal::getHtmlDictionnary();
 
-			// Editor wysiwyg
+
+			?>
+			<script type="text/javascript">
+				$(function() {
+						if ($('input[name=content]').length > 0)
+						{
+							$('input[name=content]').each(function(i, item) {
+								var value = '';
+								// Le dernier item correspond à l'édition
+								if (i == $('input[name=content]').length - 1) {
+									value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+								}
+								$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
+							});
+
+							<?php if (isModEnabled('fckeditor') && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+							$('textarea[name=content]').each(function(i, item) {
+								CKEDITOR.replace(item, {
+									toolbar: 'dolibarr_notes',
+									customConfig: ckeditorConfig,
+									versionCheck: false
+								});
+								});
+								<?php } ?>
+							}
+				});
+			</script>
+			<?php
+		}
+
+		return 0;
+	}
+	function createDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $langs;	// InfraS change
+
+		$dictionnariesTablePrefix = '';
+		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
+
+		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
+		{
+
+			// Editor wysiwyg	// InfraS add begin
 			$toolbarname = 'dolibarr_notes';
 			$disallowAnyContent = true;
 			if (isset($conf->global->FCKEDITOR_ALLOW_ANY_CONTENT)) {
@@ -108,84 +148,68 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$htmlencode_force = preg_match('/_encoded$/', $toolbarname) ? 'true' : 'false';
 			$editor_height = empty($conf->global->MAIN_DOLEDITOR_HEIGHT) ? 100 : $conf->global->MAIN_DOLEDITOR_HEIGHT;
 			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
-
+			// InfraS add end
 			?>
 			<script type="text/javascript">
 				$(function() {
-
-					<?php if ((float) DOL_VERSION >= 6.0) { ?>
-							if ($('input[name=content]').length > 0)
-							{
-								$('input[name=content]').each(function(i,item) {
-									var value = '';
-									// Le dernier item correspond à l'édition
-									if (i == $('input[name=content]').length) value = <?php echo json_encode($value); ?>;
-									$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
-								});
-
-								<?php if (!empty($conf->fckeditor->enabled) && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
-									var ckeditor_params = {
-                                    customConfig: ckeditorConfig,
-                                    readOnly: false,
-                                    htmlEncodeOutput: <?php print $htmlencode_force; ?>,
-                                    allowedContent: <?php print $editor_allowContent; ?>,
-                                    extraAllowedContent: 'a[target];div{float,display}',
-                                    disallowedContent : '',
-                                    fullPage : false,
-                                    toolbar: '<?php print $toolbarname; ?>',
-                                    toolbarStartupExpanded: false,
-                                    width: '',
-                                    height: '<?php print $editor_height; ?>',
-                                    skin: '<?php print $skin; ?>',
-                                    <?php print $scaytautostartup; ?>
-                                    scayt_sLang: '<?php print $langs->getDefaultLang(); ?>',
-                                    language: '<?php print $langs->defaultlang; ?>',
-                                    textDirection: '<?php print $langs->trans('DIRECTION'); ?>',
-                                    on :
-                                        {
-                                            instanceReady : function( ev )
-                                            {
-                                                // Output paragraphs as <p>Text</p>.
-                                                this.dataProcessor.writer.setRules( 'p',
-                                                    {
-                                                        indent : false,
-                                                        breakBeforeOpen : true,
-                                                        breakAfterOpen : false,
-                                                        breakBeforeClose : false,
-                                                        breakAfterClose : true
-                                                    });
-                                            }
-                                        },
-                                    disableNativeSpellChecker: false,
-                                    filebrowserBrowseUrl: ckeditorFilebrowserBrowseUrl,
-                                    filebrowserImageBrowseUrl: ckeditorFilebrowserImageBrowseUrl,
-                                    filebrowserWindowWidth: '900',
-                                    filebrowserWindowHeight: '500',
-                                    filebrowserImageWindowWidth: '900',
-                                    filebrowserImageWindowHeight: '500',
-                                };
-
-								$('textarea[name=content]').each(function(i, item) {
-                                    CKEDITOR.replace(item, ckeditor_params);
-								});
-								<?php } ?>
+					if ($('input[name=content]').length > 0)
+					{
+						$('input[name=content]').each(function(i, item) {
+							var value = '';
+							// Le dernier item correspond à l'édition
+							if (i == $('input[name=content]').length - 1) {
+								value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 							}
-					<?php } else { ?>
-						// <= 5.0
-						// Le CKEditor est forcé sur la page dictionnaire, pas possible de mettre une valeur custom
-						// petit js qui supprimer le wysiwyg et affiche le textarea car avant la version 6.0 le wysiwyg sur une page de dictionnaire est inexploitable
-						<?php if (!empty($conf->fckeditor->enabled)) { ?>
-							CKEDITOR.on('instanceReady', function(ev) {
-								var editor = ev.editor;
+							$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
+						});
 
-								if (editor.name == 'content') // Mon champ en bdd s'appel "content", pas le choix si je veux avoir un textarea sur une page de dictionnaire
-								{
-									editor.element.show();
-									editor.destroy();
-								}
+						<?php if (isModEnabled("fckeditor") && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+									var ckeditor_params = {
+										customConfig: ckeditorConfig,
+										readOnly: false,
+										htmlEncodeOutput: <?php print $htmlencode_force; ?>,
+										allowedContent: <?php print $editor_allowContent; ?>,
+										extraAllowedContent: 'a[target];div{float,display}',
+										disallowedContent : '',
+										fullPage : false,
+										toolbar: '<?php print $toolbarname; ?>',
+										toolbarStartupExpanded: false,
+										width: '',
+										height: '<?php print $editor_height; ?>',
+										skin: '<?php print $skin; ?>',
+										<?php print $scaytautostartup; ?>
+										scayt_sLang: '<?php print $langs->getDefaultLang(); ?>',
+										language: '<?php print $langs->defaultlang; ?>',
+										textDirection: '<?php print $langs->trans('DIRECTION'); ?>',
+										on :
+											{
+												instanceReady : function( ev )
+												{
+													// Output paragraphs as <p>Text</p>.
+													this.dataProcessor.writer.setRules( 'p',
+														{
+															indent : false,
+															breakBeforeOpen : true,
+															breakAfterOpen : false,
+															breakBeforeClose : false,
+															breakAfterClose : true
 							});
+												}
+											},
+										disableNativeSpellChecker: false,
+										filebrowserBrowseUrl: ckeditorFilebrowserBrowseUrl,
+										filebrowserImageBrowseUrl: ckeditorFilebrowserImageBrowseUrl,
+										filebrowserWindowWidth: '900',
+										filebrowserWindowHeight: '500',
+										filebrowserImageWindowWidth: '900',
+										filebrowserImageWindowHeight: '500',
+									};
+
+									$('textarea[name=content]').each(function(i, item) {
+										CKEDITOR.replace(item, ckeditor_params);
+						});
 						<?php } ?>
-					<?php } ?>
+					}
 				});
 			</script>
 			<?php
@@ -193,6 +217,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		return 0;
 	}
+
 
 	/** Overloading the formObjectOptions function : replacing the parent's function with the one below
 	 * @param      $parameters  array           meta datas of the hook (context, etc...)
@@ -289,7 +314,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				else if($action==='ask_deleteallline') {
 						$form=new Form($db);
 
-						$lineid = GETPOST('lineid','integer');
+						$lineid = GETPOST('lineid','int');
 						$TIdForGroup = TSubtotal::getLinesFromTitleId($object, $lineid, true);
 
 						$nbLines = count($TIdForGroup);
@@ -326,13 +351,33 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			'conf' => array(
 				'SUBTOTAL_USE_NEW_FORMAT' => getDolGlobalInt('SUBTOTAL_USE_NEW_FORMAT'),
 				'MAIN_VIEW_LINE_NUMBER' => getDolGlobalInt('MAIN_VIEW_LINE_NUMBER'),
-				'token' => ((float) DOL_VERSION < 11.0) ?  $_SESSION['newtoken'] : newToken()
+				'token' => newToken(),
+				'groupBtn' => intval(DOL_VERSION) < 20.0 || getDolGlobalInt('SUBTOTAL_FORCE_EXPLODE_ACTION_BTN') ? 0 : 1
 			),
 			'langs' => array(
 				'Level' => $langs->trans('Level'),
-				'Position' => $langs->transnoentities('Position')
+				'Position' => $langs->transnoentities('Position'),
+				'AddTitle' => $langs->trans('AddTitle'),
+				'AddSubTotal' => $langs->trans('AddSubTotal'),
+				'AddFreeText' => $langs->trans('AddFreeText'),
 			)
 		);
+
+
+		$jsData['buttons'] = dolGetButtonAction('', $langs->trans('SubtotalsAndTitlesActionBtnLabel'), 'default', [
+				['attr' => [ 'rel' => 'add_title_line'], 'id' => 'add_title_line', 'urlraw' =>'#', 'label' => $langs->trans('AddTitle'), 'perm' => 1],
+				['attr' => [ 'rel' => 'add_total_line'], 'id' => 'add_total_line', 'urlraw' =>'#', 'label' => $langs->trans('AddSubTotal'), 'perm' => 1],
+				['attr' => [ 'rel' => 'add_free_text'], 'id' => 'add_free_text', 'urlraw' =>'#', 'label' => $langs->trans('AddFreeText'), 'perm' => 1],
+			], 'subtotal-actions-buttons-dropdown');
+
+		if(empty($jsData['conf']['groupBtn'])) {
+			$jsData['buttons'] = '<div class="inline-block divButAction"><a id="add_title_line" rel="add_title_line" href="javascript:;" class="butAction">'.$langs->trans('AddTitle').'</a></div>';
+			$jsData['buttons'].= '<div class="inline-block divButAction"><a id="add_total_line" rel="add_total_line" href="javascript:;" class="butAction">'.$langs->trans('AddSubTotal').'</a></div>';
+			$jsData['buttons'].= '<div class="inline-block divButAction"><a id="add_free_text" rel="add_free_text" href="javascript:;" class="butAction">'.$langs->trans('AddFreeText').'</a></div>';
+		}
+
+
+
 
 		?>
 			<!-- SubTotal action printNewFormat -->
@@ -340,11 +385,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$(document).ready(function() {
 					let jsSubTotalData = <?php print json_encode($jsData); ?>;
 
-					$('div.fiche div.tabsAction').append('<br />');
+					if(jsSubTotalData.conf.groupBtn == 0){
+						$('div.fiche div.tabsAction').append('<br />');
+						$('div.fiche div.tabsAction').append(jsSubTotalData.buttons);
+					}else{
+						$(jsSubTotalData.buttons).insertBefore($("div.fiche div.tabsAction > .butAction").first());
+					}
 
-					$('div.fiche div.tabsAction').append('<div class="inline-block divButAction"><a id="add_title_line" rel="add_title_line" href="javascript:;" class="butAction"><?php echo  $langs->trans('AddTitle' )?></a></div>');
-					$('div.fiche div.tabsAction').append('<div class="inline-block divButAction"><a id="add_total_line" rel="add_total_line" href="javascript:;" class="butAction"><?php echo  $langs->trans('AddSubTotal')?></a></div>');
-					$('div.fiche div.tabsAction').append('<div class="inline-block divButAction"><a id="add_free_text" rel="add_free_text" href="javascript:;" class="butAction"><?php echo  $langs->trans('AddFreeText')?></a></div>');
 
 
 					function updateAllMessageForms(){
@@ -414,7 +461,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						{
 							if (typeof use_textarea != 'undefined' && use_textarea && typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined" )
 							{
-								 CKEDITOR.replace( 'sub-total-title', {toolbar: 'dolibarr_details', toolbarStartupExpanded: false} );
+								 CKEDITOR.replace( 'sub-total-title', {toolbar: 'dolibarr_details', versionCheck: false, toolbarStartupExpanded: false} );
 							}
 						}
 						<?php } ?>
@@ -467,8 +514,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	                     });
 					}
 
-					$('a[rel=add_title_line]').click(function()
+					$('a[rel=add_title_line]').click(function(e)
 					{
+						e.preventDefault();
 						promptSubTotal('addTitle'
 							 , "<?php echo $langs->trans('YourTitleLabel') ?>"
 							 , "<?php echo $langs->trans('title'); ?>"
@@ -478,8 +526,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						);
 					});
 
-					$('a[rel=add_total_line]').click(function()
+					$('a[rel=add_total_line]').click(function(e)
 					{
+						e.preventDefault();
 						promptSubTotal('addSubtotal'
 							, '<?php echo $langs->trans('YourSubtotalLabel') ?>'
 							, '<?php echo $langs->trans('subtotal'); ?>'
@@ -490,8 +539,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						);
 					});
 
-					$('a[rel=add_free_text]').click(function()
+					$('a[rel=add_free_text]').click(function(e)
 					{
+						e.preventDefault();
 						promptSubTotal('addFreeTxt'
 							, "<?php echo $langs->transnoentitiesnoconv('YourTextLabel') ?>"
 							, "<?php echo $langs->trans('subtotalAddLineDescription'); ?>"
@@ -670,56 +720,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		return 0;
 	}
 
-	function createFrom($parameters, &$object, $action, $hookmanager) {
-
-        if (version_compare(DOL_VERSION, '10.0.0', '>=')) {
-            return 0;
-        }
-
-		$contextArray = array();
-		if (!empty($parameters['context'])) $contextArray = explode(':', $parameters['context']);
-		if (
-				in_array('invoicecard',              $contextArray)
-		        || in_array('invoicesuppliercard',   $contextArray)
-				|| in_array('propalcard',            $contextArray)
-		        || in_array('supplier_proposalcard', $contextArray)
-				|| in_array('ordercard',             $contextArray)
-		        || in_array('ordersuppliercard',     $contextArray)
-				|| in_array('invoicereccard',        $contextArray)
-		) {
-
-			global $db;
-
-			$objFrom = $parameters['objFrom'];
-
-			if(empty($object->lines) && method_exists($object, 'fetch_lines')) $object->fetch_lines();
-
-			foreach($objFrom->lines as $k=> &$lineOld) {
-
-					if($lineOld->product_type == 9 && $lineOld->info_bits > 0 ) {
-
-							$line = & $object->lines[$k];
-
-							$idLine = (int) ($line->id ? $line->id : $line->rowid);
-
-							if($line->info_bits != $lineOld->info_bits) {
-								$db->query("UPDATE ".MAIN_DB_PREFIX.$line->table_element."
-								SET info_bits=".(int)$lineOld->info_bits."
-								WHERE rowid = ".$idLine."
-								");
-							}
-
-					}
-
-
-			}
-
-
-		}
-
-		return 0;
-	}
-
 	/**
 	 * @param array $parameters
 	 * @param CommonObject $object
@@ -853,7 +853,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		}
 		else if($action === 'confirm_delete_all_lines' && GETPOST('confirm', 'none')=='yes') {
-
+			$error = 0;
 			$Tab = TSubtotal::getLinesFromTitleId($object, GETPOST('lineid', 'int'), true);
 			foreach($Tab as $line) {
                 $result = 0;
@@ -892,8 +892,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				 */
 				else if($object->element=='commande')
 				{
-					if ((float) DOL_VERSION >= 5.0) $result = $object->deleteline($user, $idLine);
-					else $result = $object->deleteline($idLine);
+					$result = $object->deleteline($user, $idLine);
 				}
 				/**
 				 * @var $object Commande fournisseur
@@ -914,7 +913,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                 if ($result < 0) $error++;
 			}
 
-            if ($error) {
+            if ($error > 0) {
                 setEventMessages($object->error, $object->errors, 'errors');
                 $db->rollback();
             } else {
@@ -1599,7 +1598,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$bgW = $pdf->page_largeur - $pdf->marge_droite;// historiquement ce sont ces valeurs, mais elles sont la plupart du temps vide
 
 			// POUR LES PDF DE TYPE PDF_EVOLUTION (ceux avec les colonnes configurables)
-			if(!empty($object->context['subtotalPdfModelInfo']->cols) && version_compare('11.0.0', DOL_VERSION, '<')){
+			if(!empty($object->context['subtotalPdfModelInfo']->cols)){
 				$bgStartX = $object->context['subtotalPdfModelInfo']->marge_droite;
 				$bgW = $object->context['subtotalPdfModelInfo']->page_largeur - $object->context['subtotalPdfModelInfo']->marge_gauche - $object->context['subtotalPdfModelInfo']->marge_droite;
 			}
@@ -1610,7 +1609,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$posy = $posYAfterDesc;
 			$pdf->SetXY($posx, $posy); //reset position
 			$pdf->SetFont('', $style, $size_title); //reset style
-			$pdf->SetTextColor('text', 0, 0, 0); // restore default text color;
+			$pdf->SetColor('text', 0, 0, 0); // restore default text color;
 		}
 
 		// restore cell padding
@@ -1639,7 +1638,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		{
 			dol_include_once('/commande/class/commande.class.php');
 			$line = new OrderLine($object->db);
-			$line->fetch($object->lines[$i]->fk_origin_line);
+			$line->fetch($object->lines[$i]->fk_elementdet ?? $object->lines[$i]->fk_origin_line);
 		}
 
 
@@ -1972,16 +1971,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// InfraS add end
 			$this->resprints = ' ';
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+
+            return 1;
+
 		}
 
-	//	if(is_array($parameters)) $i = & $parameters['i'];
-	//	else $i = (int)$parameters;
+	//	if(is_array($parameters)) $i = & $parameters['i'];	// InfraS change (moved up)
+	//	else $i = (int)$parameters;	// InfraS change (moved up)
 
 		if (getDolGlobalString('SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS') && (!empty($object->lines[$i]->array_options['options_subtotal_nc']) || TSubtotal::hasNcTitle($object->lines[$i])) )
 		{
@@ -2001,12 +1997,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		if($this->isModSubtotalLine($parameters,$object) ){
 			$this->resprints = ' ';
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+            return 1;
+
 		}
 
 		if(is_array($parameters)) $i = & $parameters['i'];
@@ -2046,12 +2038,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                 }
             }
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+
+            return 1;
+
 		}
 
 		// Si la gestion C/NC est active et que je suis sur un ligne dont l'extrafield est coché
@@ -2114,12 +2103,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				}
             }
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+
+            return 1;
+
 		}
 		elseif (!empty($hideprices) || !empty($hidesubdetails)	// InfraS change
 		        || (getDolGlobalString('SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS') && (!empty($object->lines[$i]->array_options['options_subtotal_nc']) || TSubtotal::hasNcTitle($object->lines[$i])) )
@@ -2144,12 +2130,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		if($this->isModSubtotalLine($parameters,$object) ){
 			$this->resprints = ' ';
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+
+
+            return 1;
+
 		}
 
 		if(is_array($parameters)) $i = & $parameters['i'];
@@ -2176,15 +2160,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 //		// TODO : peut être faire l'inverse : limiter à certains elements plutot que le faire pour tous ... à voir si un autre PB du genre apparait.
 		$TContext	= explode(':', $parameters['context']);	// InfraS add
 		if (in_array('expensereportcard', $TContext))	return 0;	// InfraS add
+
 		if($this->isModSubtotalLine($parameters,$object) ){
 			$this->resprints = ' ';
+            return 1;
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
 		}
 
 		if(is_array($parameters)) $i = & $parameters['i'];
@@ -2234,12 +2214,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		if($this->isModSubtotalLine($parameters,$object) ){
 			$this->resprints = ' ';
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+            return 1;
+
 		}
 
 		if(is_array($parameters)) $i = & $parameters['i'];
@@ -2348,7 +2324,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$TTitle[$j]['numerotation'] = ($prefix_num == 0) ? $i : $prefix_num.'.'.$i;
 				//var_dump('Prefix == '.$prefix_num.' // '.$line->desc.' ==> numerotation == '.$TTitle[$j]['numerotation'].'   ###    '.$line->qty .'=='. $level);
 				if (empty($line->label) && (
-					(float)DOL_VERSION < 6 || in_array($line->element, $TLineElementsWithoutLabel)
+					in_array($line->element, $TLineElementsWithoutLabel)
 					)
 				) {
 					$line->label = !empty($line->desc) ? $line->desc : $line->description;
@@ -2396,16 +2372,15 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$this->subtotal_show_qty_by_default = true;
 		}
 
-		$TContext	= explode(':', $parameters['context']);	// InfraS add
-		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {	// InfraS add
+		// InfraS change begin
+		$TContext	= explode(':', $parameters['context']);
+		if (in_array('pdfgeneration', $TContext)) {
 			// for compatibility dolibarr < 15
-			if(!isset($object->context)){ $object->context = array(); }
+			if(!empty($object->context)){ $object->context = array(); }
 			$object->context['subtotalPdfModelInfo'] = new stdClass(); // see defineColumnFiel method in this class
 			$object->context['subtotalPdfModelInfo']->cols = false;
-			$object->context['subtotalTransactionLine'] = array();
-
-
-
+		}
+		if (in_array('propalcard', $TContext) || in_array('ordercard', $TContext) || in_array('invoicecard', $TContext) || in_array('supplier_proposalcard', $TContext) || in_array('ordersuppliercard', $TContext) || in_array('invoicesuppliercard', $TContext)) {
 			// var_dump($object->lines);
 			dol_include_once('/subtotal/class/subtotal.class.php');
 
@@ -2596,7 +2571,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					return 0;
 				}
 			}
-		} 	// InfraS add
+		}
+		// InfraS change end
 		return 0;
 	}
 
@@ -2632,7 +2608,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 				$line = &$object->lines[$i];
 
+				// Unset on Dolibarr < 20.0
 				if($object->element == 'delivery' && ! empty($object->commande->expeditions[$line->fk_origin_line])) unset($object->commande->expeditions[$line->fk_origin_line]);
+				// Unset on Dolibarr >= 20.0
+				if($object->element == 'delivery' && ! empty($object->commande->expeditions[$line->fk_elementdet])) unset($object->commande->expeditions[$line->fk_elementdet]);
 
 				$margin = $pdf->getMargins();
 				if(!empty($margin) && $line->info_bits>0) { // PAGE BREAK
@@ -2659,14 +2638,20 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						 * si aucune transaction n'est en cours, on peut y faire appel sans problème pour revenir
 						 * à l'état d'origine.
 						 */
-						if (!isset($object->context['subtotalTransactionLine'][$i])) {
-							$pdf->rollbackTransaction(true);
-							$object->context['subtotalTransactionLine'][$i]  = true;
-						}
+						$pdf->rollbackTransaction(true);
 						$pdf->startTransaction();
 
 						$pageBefore = $pdf->getPage();
 					}
+
+
+					// FIX DA024845 : Le module sous total amène des erreurs dans les sauts de page lorsque l'on arrive tout juste en bas de page.
+					$heightForFooter = getDolGlobalInt('MAIN_PDF_MARGIN_BOTTOM', 10) + (getDolGlobalInt('MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS') ? 12 : 22); // Height reserved to output the footer (value include bottom margin)
+					if($pdf->getPageHeight() - $posy - $heightForFooter < 8){
+						$pdf->addPage('', '', true);
+						$posy = $pdf->GetY();
+					}
+
 
 					$this->pdf_add_total($pdf,$object, $line, $label, $description,$posx, $posy, $w, $h);
 
@@ -2720,10 +2705,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						 * si aucune transaction n'est en cours, on peut y faire appel sans problème pour revenir
 						 * à l'état d'origine.
 						 */
-						if (!isset($object->context['subtotalTransactionLine'][$i])) {
-							$pdf->rollbackTransaction(true);
-							$object->context['subtotalTransactionLine'][$i]  = true;
-						}
+						$pdf->rollbackTransaction(true);
 						$pdf->startTransaction();
 
 						$pageBefore = $pdf->getPage();
@@ -2770,10 +2752,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						 * si aucune transaction n'est en cours, on peut y faire appel sans problème pour revenir
 						 * à l'état d'origine.
 						 */
-						if (!isset($object->context['subtotalTransactionLine'][$i])) {
-							$pdf->rollbackTransaction(true);
-							$object->context['subtotalTransactionLine'][$i]  = true;
-						}
+						$pdf->rollbackTransaction(true);
 						$pdf->startTransaction();
 
 						$pageBefore = $pdf->getPage();
@@ -2883,13 +2862,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		}
 		elseif($object->element == 'shipping' || $object->element == 'delivery')
 		{
-			if(empty($line->origin_line_id) && ! empty($line->fk_origin_line))
+			if(empty($line->origin_line_id) && (! empty($line->fk_origin_line || ! empty($line->fk_elementdet))))
 			{
-				$line->origin_line_id = $line->fk_origin_line;
+				$line->origin_line_id = $line->fk_elementdet ?? $line->fk_origin_line;
 			}
 
 			$originline = new OrderLine($db);
-			$originline->fetch($line->fk_origin_line);
+			$originline->fetch($line->fk_elementdet ?? $line->fk_origin_line);
 
 			foreach(get_object_vars($line) as $property => $value)
 			{
@@ -2926,57 +2905,32 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		else if (in_array('invoicecard',$contexts) || in_array('invoicesuppliercard',$contexts) || in_array('propalcard',$contexts) || in_array('supplier_proposalcard',$contexts) || in_array('ordercard',$contexts) || in_array('ordersuppliercard',$contexts) || in_array('invoicereccard',$contexts))
         {
 
-
-			if((float)DOL_VERSION <= 3.4)
-			{
-				?>
-				<script type="text/javascript">
-					$(document).ready(function() {
-						$('#tablelines tr[rel=subtotal]').mouseleave(function() {
-
-							id_line =$(this).attr('id');
-
-							$(this).find('td[rel=subtotal_total]').each(function() {
-								$.get(document.location.href, function(data) {
-									var total = $(data).find('#tablelines tr#'+id_line+' td[rel=subtotal_total]').html();
-
-									$('#tablelines tr#'+id_line+' td[rel=subtotal_total]').html(total);
-
-								});
-							});
-						});
-					});
-
-				</script>
-				<?php
-			}
-
 			if(empty($line->description)) $line->description = $line->desc;
 
             $TNonAffectedByMarge = array('order_supplier', 'invoice_supplier', 'supplier_proposal');
             $affectedByMarge = in_array($object->element, $TNonAffectedByMarge) ? 0 : 1;
 			$colspan = 5;
-			if($object->element == 'order_supplier') (float) DOL_VERSION < 7.0 ? $colspan = 3 : $colspan = 6;
-			if($object->element == 'invoice_supplier') (float) DOL_VERSION < 7.0 ? $colspan = 4: $colspan = 4;	// InfraS change
-			if($object->element == 'supplier_proposal') (float) DOL_VERSION < 6.0 ? $colspan = 4 : $colspan = 3;
+			if($object->element == 'order_supplier')  $colspan = 6;
+			if($object->element == 'invoice_supplier') $colspan = 4;	// InfraS change
+			if($object->element == 'supplier_proposal') $colspan = 3;
 
 			if(DOL_VERSION > 16.0 && empty(getDolGlobalString('MAIN_NO_INPUT_PRICE_WITH_TAX'))) $colspan++; // Ajout de la colonne PU TTC
 			elseif(!empty($inputalsopricewithtax))	 $colspan++;	// InfraS add
 
 			if($object->element == 'facturerec' ) $colspan = 5;
 
-			if(!empty($conf->multicurrency->enabled) && ((float) DOL_VERSION < 8.0 || $object->multicurrency_code != $conf->currency)) {
+			if(isModEnabled('multicurrency') && ($object->multicurrency_code != $conf->currency)) {
 				$colspan++; // Colonne PU Devise
 			}
-			if($object->element == 'commande' && $object->statut < 3 && !empty($conf->shippableorder->enabled)) $colspan++;
-			$margins_hidden_by_module = empty($conf->affmarges->enabled) ? false : !($_SESSION['marginsdisplayed']);
-			if(!empty($conf->margin->enabled) && !$margins_hidden_by_module) $colspan++;
-			if(!empty($conf->margin->enabled) && getDolGlobalString('DISPLAY_MARGIN_RATES') && !$margins_hidden_by_module && $affectedByMarge > 0) $colspan++;
-			if(!empty($conf->margin->enabled) && getDolGlobalString('DISPLAY_MARK_RATES') && !$margins_hidden_by_module && $affectedByMarge > 0) $colspan++;
+			if($object->element == 'commande' && $object->statut < 3 && isModEnabled('shippableorder')) $colspan++;
+			$margins_hidden_by_module = !isModEnabled('affmarges') ? false : !($_SESSION['marginsdisplayed']);
+			if(isModEnabled('margin') && !$margins_hidden_by_module) $colspan++;
+			if(isModEnabled('margin') && getDolGlobalString('DISPLAY_MARGIN_RATES') && !$margins_hidden_by_module && $affectedByMarge > 0) $colspan++;
+			if(isModEnabled('margin') && getDolGlobalString('DISPLAY_MARK_RATES') && !$margins_hidden_by_module && $affectedByMarge > 0) $colspan++;
 			if($object->element == 'facture' && getDolGlobalString('INVOICE_USE_SITUATION') && $object->type == Facture::TYPE_SITUATION) $colspan++;
 			if(getDolGlobalString('PRODUCT_USE_UNITS')) $colspan++;
 			// Compatibility module showprice
-			if(!empty($conf->showprice->enabled)) $colspan++;
+			if(isModEnabled('showprice')) $colspan++;
 			/* Titre */
 
 
@@ -3087,9 +3041,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						if($line->label=='' && !$isFreeText) {
 							if(TSubtotal::isSubtotal($line)) {
 								$newlabel = $line->description.' '.$this->getTitle($object, $line);
-								$line->description='';
-							} elseif( (float)DOL_VERSION < 6 ) {
-								$newlabel= $line->description;
 								$line->description='';
 							}
 						}
@@ -3300,8 +3251,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 
 						 // Get display styles and apply them
-                        $style = '';
-						$style =  getDolGlobalString('SUBTOTAL_TITLE_STYLE', '');
+                         $style = '';
+						 $style  =  TSubtotal::isFreeText($line) ? getDolGlobalString('SUBTOTAL_TEXT_LINE_STYLE', '') : getDolGlobalString('SUBTOTAL_TITLE_STYLE', '');
 						 $titleStyleItalic = strpos($style, 'I') === false ? '' : ' font-style: italic;';
 						 $titleStyleBold =  strpos($style, 'B') === false ? '' : ' font-weight:bold;';
 						 $titleStyleUnderline =  strpos($style, 'U') === false ? '' : ' text-decoration: underline;';
@@ -3355,12 +3306,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 					/* Total */
 					echo '<td class="linecolht nowrap" align="right" style="font-weight:bold;" rel="subtotal_total">'.price($total_line).'</td>';
-					if (!empty($conf->multicurrency->enabled) && ((float) DOL_VERSION < 8.0 || $object->multicurrency_code != $conf->currency)) {
+					if (isModEnabled('multicurrency') && ($object->multicurrency_code != $conf->currency)) {
 						echo '<td class="linecoltotalht_currency">&nbsp;</td>';
 					}
 				} else {
 					echo '<td class="linecolht movetitleblock">&nbsp;</td>';
-					if (!empty($conf->multicurrency->enabled) && ((float) DOL_VERSION < 8.0 || $object->multicurrency_code != $conf->currency)) {
+					if (isModEnabled('multicurrency') && ($object->multicurrency_code != $conf->currency)) {
 						echo '<td class="linecoltotalht_currency">&nbsp;</td>';
 					}
 				}
@@ -3392,11 +3343,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                             if(empty($line->fk_prev_id)) $line->fk_prev_id = null;
 							if(TSubtotal::isTitle($line) && ( $line->fk_prev_id === null )) {
 								echo '<a class="subtotal-line-action-btn" title="'.$langs->trans('CloneLSubtotalBlock').'" href="'.$_SERVER['PHP_SELF'].'?'.$idvar.'='.$object->id.'&action=duplicate&lineid='.$line->id.'&token='.$newToken.'" >';
-								if(intval(DOL_VERSION) < 8) {
-									echo img_picto($langs->trans('Duplicate'), 'duplicate@subtotal');
-								} else {
-									echo '<i class="fa fa-clone" aria-hidden="true"></i>';
-								}
+
+                                echo '<i class="fa fa-clone" aria-hidden="true"></i>';
+
 								echo '</a>';
 							}
 						}
@@ -3426,13 +3375,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 							if(TSubtotal::isTitle($line) && (!isset($line->fk_prev_id) || (isset($line->fk_prev_id) && ($line->fk_prev_id === null))) )
 							{
-								if ((float) DOL_VERSION >= 8.0) {
-									$img_delete = img_delete($langs->trans('deleteWithAllLines'), ' style="color:#be3535 !important;" class="pictodelete pictodeleteallline"');
-								} elseif ((float) DOL_VERSION >= 3.8) {
-									$img_delete = img_picto($langs->trans('deleteWithAllLines'), 'delete_all.3.8@subtotal',' class="pictodelete" ');
-								} else {
-									$img_delete = img_picto($langs->trans('deleteWithAllLines'), 'delete_all@subtotal');
-								}
+
+                                $img_delete = img_delete($langs->trans('deleteWithAllLines'), ' style="color:#be3535 !important;" class="pictodelete pictodeleteallline"');
 
 								echo '<a class="subtotal-line-action-btn"  href="'.$_SERVER['PHP_SELF'].'?'.$idvar.'='.$object->id.'&action=ask_deleteallline&lineid='.$line->id.'&token='.$newToken.'">'.$img_delete.'</a>';
 							}
@@ -3674,8 +3618,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 			$colspan = 4;
 			if($object->origin && $object->origin_id > 0) $colspan++;
-			if(! empty($conf->stock->enabled)) $colspan++;
-			if(! empty($conf->productbatch->enabled)) $colspan++;
+			if(isModEnabled('stock')) $colspan++;
+			if(isModEnabled('productbatch')) $colspan++;
 			if($object->statut == 0) $colspan++;
 			if($object->statut == 0 && !getDolGlobalString('SUBTOTAL_ALLOW_REMOVE_BLOCK')) $colspan++;
 
@@ -3780,7 +3724,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$lineid = $line->id;
 				if($line->element === 'commandedet') {
 					foreach($object->lines as $shipmentLine) {
-						if(!empty($shipmentLine->fk_origin_line) && $shipmentLine->fk_origin == 'orderline' && $shipmentLine->fk_origin_line == $line->id) {
+						if((!empty($shipmentLine->fk_elementdet)) && $shipmentLine->fk_origin == 'orderline' && $shipmentLine->fk_elementdet == $line->id) {
+							$lineid = $shipmentLine->id;
+						} elseif((!empty($shipmentLine->fk_origin_line)) && $shipmentLine->fk_origin == 'orderline' && $shipmentLine->fk_origin_line == $line->id) {
 							$lineid = $shipmentLine->id;
 						}
 					}
@@ -3793,13 +3739,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 				if(TSubtotal::isTitle($line) && ($line->fk_prev_id === null) )
 				{
-					if ((float) DOL_VERSION >= 8.0) {
-						$img_delete = img_delete($langs->trans('deleteWithAllLines'), ' style="color:#be3535 !important;" class="pictodelete pictodeleteallline"');
-					} elseif ((float) DOL_VERSION >= 3.8) {
-						$img_delete = img_picto($langs->trans('deleteWithAllLines'), 'delete_all.3.8@subtotal',' class="pictodelete" ');
-					} else {
-						$img_delete = img_picto($langs->trans('deleteWithAllLines'), 'delete_all@subtotal');
-					}
+                    $img_delete = img_delete($langs->trans('deleteWithAllLines'), ' style="color:#be3535 !important;" class="pictodelete pictodeleteallline"');
 
 					echo '<a href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&amp;action=ask_deleteallline&amp;lineid='.$lineid.'&token='.$newToken.'">'.$img_delete.'</a>';
 				}
@@ -3987,12 +3927,17 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 							if ((typeof id != 'undefined' && id.indexOf('row-') == 0) || $(item).hasClass('liste_titre'))
 							{
-								$(item).children('td:last-child').before('<td class="subtotal_nc"></td>');
+								let tableNCColSelector = 'td';
+								if($(item).hasClass('liste_titre') && $(item).children('th:last-child').length > 0 &&  $(item).children('td:last-child').length == 0){
+									tableNCColSelector = 'th'; // In Dolibarr V20.0 title use th instead of td
+								}
+
+								$(item).children(`${tableNCColSelector}:last-child`).before(`<${tableNCColSelector} class="subtotal_nc"></${tableNCColSelector}>`);
 
 								if ($(item).attr('rel') != 'subtotal' && typeof $(item).attr('id') != 'undefined')
 								{
 									var idSplit = $(item).attr('id').split('-');
-									$(item).children('td.subtotal_nc').append($('<input type="checkbox" id="subtotal_nc-'+idSplit[1]+'" class="subtotal_nc_chkbx" data-lineid="'+idSplit[1]+'" value="1" '+(typeof subtotal_TSubNc[idSplit[1]] != 'undefined' && subtotal_TSubNc[idSplit[1]] == 1 ? 'checked="checked"' : '')+' />'));
+									$(item).children(`${tableNCColSelector}.subtotal_nc`).append($('<input type="checkbox" id="subtotal_nc-'+idSplit[1]+'" class="subtotal_nc_chkbx" data-lineid="'+idSplit[1]+'" value="1" '+(typeof subtotal_TSubNc[idSplit[1]] != 'undefined' && subtotal_TSubNc[idSplit[1]] == 1 ? 'checked="checked"' : '')+' />'));
 								}
 							}
 							else
@@ -4044,7 +3989,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			'useOldSplittedTrForLine' => intval(DOL_VERSION) < 16 ? 1 : 0
 		);
 
-		print '<script type="text/javascript"> var subtotalSummaryJsConf = '.json_encode($jsConfig).'; </script>'; // used also for subtotal.lib.js
+		print '<script type="text/javascript"> if (typeof subtotalSummaryJsConf === undefined) { var subtotalSummaryJsConf = {}; } subtotalSummaryJsConf = '.json_encode($jsConfig).'; </script>'; // used also for subtotal.lib.js
 
 
 		if(!getDolGlobalString('SUBTOTAL_DISABLE_SUMMARY')){
@@ -4346,13 +4291,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	 */
 	public function defineColumnField($parameters, &$pdfDoc, &$action, $hookmanager)
 	{
-		if (property_exists($parameters['object'], 'context')
-			&& is_array($parameters['object']->context)
-			&& isset($parameters['object']->context['subtotalPdfModelInfo'])
-			&& is_object($parameters['object']->context['subtotalPdfModelInfo'])
-		) {
-			// If this model is column field compatible it will add info to change subtotal behavior
-			$parameters['object']->context['subtotalPdfModelInfo']->cols = $pdfDoc->cols;
+
+		// If this model is column field compatible it will add info to change subtotal behavior
+		$parameters['object']->context['subtotalPdfModelInfo']->cols = $pdfDoc->cols;
 
 			$parameters['object']->context['subtotalPdfModelInfo']->cols = $pdfDoc->cols;
 			// HACK Pour passer les paramettres du model dans les hooks sans infos
@@ -4361,11 +4302,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$parameters['object']->context['subtotalPdfModelInfo']->page_largeur 	= $pdfDoc->page_largeur;
 			$parameters['object']->context['subtotalPdfModelInfo']->page_hauteur 	= $pdfDoc->page_hauteur;
 			$parameters['object']->context['subtotalPdfModelInfo']->format 		= $pdfDoc->format;
-		    if (property_exists($pdfDoc, 'context') && is_object($pdfDoc->context['subtotalPdfModelInfo'])) {
-				$parameters['object']->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle = $pdfDoc->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle;
+		    if (property_exists($pdfDoc, 'context') && array_key_exists('subtotalPdfModelInfo', $pdfDoc->context) && is_object($pdfDoc->context['subtotalPdfModelInfo'])) {
+                $parameters['object']->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle = $pdfDoc->context['subtotalPdfModelInfo']->defaultTitlesFieldsStyle;
                 $parameters['object']->context['subtotalPdfModelInfo']->defaultContentsFieldsStyle = $pdfDoc->context['subtotalPdfModelInfo']->defaultContentsFieldsStyle;
 		    }
-		}
 		return 0;
 	}
 
@@ -4375,20 +4315,39 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	 */
 	private function _billOrdersAddCheckBoxForTitleBlocks()
 	{
-		global $delayedhtmlcontent, $langs;
+		global $delayedhtmlcontent, $langs, $conf;
+
 		ob_start();
+		$jsConf = array(
+			'langs'=>  array(
+				'AddTitleBlocFromOrdersToInvoice' => $langs->trans('subtotal_add_title_bloc_from_orderstoinvoice'),
+				'AddShippingListToTile' => $langs->trans('AddShippingListToTile'),
+				'SubtotalOptions' => $langs->trans('SubtotalOptions'),
+				'UseHiddenConfToAutoCheck' => $langs->trans('UseHiddenConfToAutoCheck'),
+			),
+			'isModShippingEnable' => !empty($conf->expedition->enabled),
+			'SUBTOTAL_DEFAULT_CHECK_SHIPPING_LIST_FOR_TITLE_DESC' => getDolGlobalInt('SUBTOTAL_DEFAULT_CHECK_SHIPPING_LIST_FOR_TITLE_DESC')
+		);
 		?>
 			<script type="text/javascript">
 				$(function() {
-					var tr = $("<tr><td><?php echo $langs->trans('subtotal_add_title_bloc_from_orderstoinvoice'); ?></td><td><input type='checkbox' value='1' name='subtotal_add_title_bloc_from_orderstoinvoice' checked='checked' /></td></tr>");
-					var $noteTextArea = $("textarea[name=note]");
+					let jsConf = <?php print json_encode($jsConf); ?>;
+
+					let tr = '<tr><td>'+jsConf.langs.SubtotalOptions+'</td><td>';
+					tr+= '<label><input type="checkbox" value="1" name="subtotal_add_title_bloc_from_orderstoinvoice" checked="checked" /> '+jsConf.langs.AddTitleBlocFromOrdersToInvoice+'</label>';
+					if(jsConf.isModShippingEnable){
+						tr+= '<br/><label><input type="checkbox" value="1" name="subtotal_add_shipping_list_to_title_desc" /> '+jsConf.langs.AddShippingListToTile+' <i class="fa fa-question-circle" title="'+jsConf.langs.UseHiddenConfToAutoCheck+' SUBTOTAL_DEFAULT_CHECK_SHIPPING_LIST_FOR_TITLE_DESC"></label>';
+					}
+					tr+= '<td></tr>';
+
+					let $noteTextArea = $("textarea[name=note]");
 					if ($noteTextArea.length === 1) {
-						$noteTextArea.closest('tr').after(tr);
+						$noteTextArea.closest($('tr')).after(tr);
 						return;
 					}
-					var $inpCreateBills = $("#validate_invoices");
+					let $inpCreateBills = $("#validate_invoices");
 					if ($inpCreateBills.length === 1) {
-						$inpCreateBills.closest('tr').after(tr);
+						$inpCreateBills.closest($('tr')).after(tr);
 					}
 				});
 			</script>
