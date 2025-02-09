@@ -109,6 +109,7 @@ class TSubtotal {
 
 		$res = 0;
 
+		$desc = '';
 
 		$TNotElements = array ('invoice_supplier', 'order_supplier');
 		if ($qty==50 && !in_array($object->element, $TNotElements)) {

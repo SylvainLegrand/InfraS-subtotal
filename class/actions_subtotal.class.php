@@ -161,49 +161,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						});
 
 						<?php if (isModEnabled("fckeditor") && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
-									var ckeditor_params = {
-										customConfig: ckeditorConfig,
-										readOnly: false,
-										htmlEncodeOutput: <?php print $htmlencode_force; ?>,
-										allowedContent: <?php print $editor_allowContent; ?>,
-										extraAllowedContent: 'a[target];div{float,display}',
-										disallowedContent : '',
-										fullPage : false,
-										toolbar: '<?php print $toolbarname; ?>',
-										toolbarStartupExpanded: false,
-										width: '',
-										height: '<?php print $editor_height; ?>',
-										skin: '<?php print $skin; ?>',
-										<?php print $scaytautostartup; ?>
-										scayt_sLang: '<?php print $langs->getDefaultLang(); ?>',
-										language: '<?php print $langs->defaultlang; ?>',
-										textDirection: '<?php print $langs->trans('DIRECTION'); ?>',
-										on :
-											{
-												instanceReady : function( ev )
-												{
-													// Output paragraphs as <p>Text</p>.
-													this.dataProcessor.writer.setRules( 'p',
-														{
-															indent : false,
-															breakBeforeOpen : true,
-															breakAfterOpen : false,
-															breakBeforeClose : false,
-															breakAfterClose : true
+						$('textarea[name=content]').each(function(i, item) {
+							CKEDITOR.replace(item, {
+								toolbar: 'dolibarr_notes',
+								customConfig: ckeditorConfig,
+								versionCheck: false
 							});
-												}
-											},
-										disableNativeSpellChecker: false,
-										filebrowserBrowseUrl: ckeditorFilebrowserBrowseUrl,
-										filebrowserImageBrowseUrl: ckeditorFilebrowserImageBrowseUrl,
-										filebrowserWindowWidth: '900',
-										filebrowserWindowHeight: '500',
-										filebrowserImageWindowWidth: '900',
-										filebrowserImageWindowHeight: '500',
-									};
-
-									$('textarea[name=content]').each(function(i, item) {
-										CKEDITOR.replace(item, ckeditor_params);
 						});
 						<?php } ?>
 					}
@@ -1773,12 +1736,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// InfraS add end
 			$this->resprints = ' ';
 
-			if((float)DOL_VERSION<=3.6) {
-				return '';
-			}
-			else if((float)DOL_VERSION>=3.8) {
-				return 1;
-			}
+
+            return 1;
+
 		}
 		elseif (getDolGlobalString('SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS'))
 		{
@@ -4403,6 +4363,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 				$jsConf = array(
 					'linesToHide' => $TBlocksToHide,
+					'hideFoldersByDefault' => getDolGlobalInt('SUBTOTAL_HIDE_FOLDERS_BY_DEFAULT'),
 					'closeMode' => $hideMode, // default, keepTitle
 					'interfaceUrl'=> dol_buildpath('/subtotal/script/interface.php', 1),
 					'element' => $element,
@@ -4623,7 +4584,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 									if(o.config.linesToHide.includes(lineId)){
 										o.toggleChildFolderStatusDisplay(lineId, 'closed');
 									}else{
-										o.toggleChildFolderStatusDisplay(lineId, 'open');
+										if (o.config.hideFoldersByDefault == 1) {
+											o.toggleChildFolderStatusDisplay(lineId, 'closed');
+										} else {
+											o.toggleChildFolderStatusDisplay(lineId, 'open');
+										}
 									}
 								}
 							});
