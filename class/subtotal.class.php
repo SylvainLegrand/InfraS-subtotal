@@ -105,7 +105,7 @@ class TSubtotal {
 	 * @return int
 	 *
 	 */
-	static function addSubTotalLine(&$object, $label, $qty, $rang=-1) {
+	static function addSubTotalLine(&$object, $label, $qty, $rang=-1, $desc = '') {
 
 		$res = 0;
 
