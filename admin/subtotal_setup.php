@@ -151,6 +151,8 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 
 	// L'ajout sous un titre se fera en fin de section
 	$formSetup->newItem('SUBTOTAL_ADD_LINE_UNDER_TITLE_AT_END_BLOCK')->setAsYesNo();
+
+	$formSetup->newItem('SUBTOTAL_HIDE_FOLDERS_BY_DEFAULT')->setAsYesNo();
 }
 
 // Cacher les options du titre
@@ -168,6 +170,9 @@ $item = $formSetup->newItem('SUBTOTAL_TEXT_FOR_TITLE_ORDETSTOINVOICE')->helpText
 // Style des titres (B = gras, U = souligné, I = italique)
 $item = $formSetup->newItem('SUBTOTAL_TITLE_STYLE');
 $item->fieldAttr['placeholder'] = 'BU';
+
+$item = $formSetup->newItem('SUBTOTAL_TEXT_LINE_STYLE');
+$item->fieldAttr['placeholder'] = '';
 
 // Style des titres (B = gras, U = souligné, I = italique)
 $item = $formSetup->newItem('SUBTOTAL_TITLE_SIZE');
@@ -364,7 +369,9 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 	$item = $formSetup->newItem('SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES');
 	$item->setAsYesNo();
 	$item->nameText = $langs->trans("SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
-	}	// InfraS add
+
+	// Activer la génération du récapitulatif sur les propositions commerciales
+	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();
 }
 
 
