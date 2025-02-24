@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 # [Unreleased]
 
 ## Release 3.28
+- FIX : DA026083 - Display details if not in a subtotal bloc - *21/02/2025* - 3.28.1
 - NEW : TK2501-3506 - Created conf SUBTOTAL_HIDE_FOLDERS_BY_DEFAULT to hide folders by default - *14/01/2025* - 3.28.0
 
 ## Release 3.27
@@ -19,7 +20,6 @@ All notable changes to this project will be documented in this file.
 - FIX: DA025864: conf `NO_TITLE_SHOW_ON_EXPED_GENERATION` should delete all
   title/free/subtotal lines from the shipment but doesn't - *12/12/2024* - 3.25.5
 - FIX : DA025861 Provide an option in the heading style configuration to have no styling at all - *12/12/2024* - 3.25.4
-
 - FIX DA025399 : GETPOST type integer n'existe pas - *22/08/2024* - 3.25.3
 - FIX : CKeditor no check version to avoid the error message  - *20/08/2024* - 3.25.2
 - FIX : Title summary - *24/07/2024* - 3.25.1
