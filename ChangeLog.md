@@ -3,10 +3,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Non Distribué]
 
+- NEW : Use v20 dropdown for action buttons & fix buttons orders - *01/10/2024* - 3.27.0  
+     Use SUBTOTAL_FORCE_EXPLODE_ACTION_BTN hidden conf to disable behavior
+- FIX : Compat V20 : Document col missing for title for NC - *16/09/2024* - 3.26.1
+- NEW : Add more order to invoice massaction option - *04/09/2024* - 3.26.0  
+  Allow adding list of shipping ref to title block 
+
 ## [3.25.31] - 22/11/2024
 - Fix ecrasement de la global $object
 
+# Release 3.25 - 24/07/2024
+- FIX: DA025864: conf `NO_TITLE_SHOW_ON_EXPED_GENERATION` should delete all 
+  title/free/subtotal lines from the shipment but doesn't - *12/12/2024* - 3.25.5
+- FIX : DA025861 Provide an option in the heading style configuration to have no styling at all - *12/12/2024* - 3.25.4  
+- FIX DA025399 : GETPOST type integer n'existe pas - *22/08/2024* - 3.25.3
+- FIX : CKeditor no check version to avoid the error message  - *20/08/2024* - 3.25.2
+- FIX : Title summary - *24/07/2024* - 3.25.1
+- FIX : Compat v20 
+  Changed Dolibarr compatibility range to 16 min - 20 max - *11/07/2024* - 3.25.0
+- Ajout du hook pdfgeneration dans la liste des hooks accepté par le module - *12/07/2024* - 3.25.0
+
 # Release 3.24 - 08/04/2024
+
+- FIX : Retour montée de version   - *27/09/2024* - 3.24.6
+- FIX : DA024845 : Le module sous total amène des erreurs dans les sauts de page lorsque l'on arrive tout juste en bas de page. - *24/07/2024* - 3.24.5
 - FIX : Module_number missed in subTotal class. function  addSubTotalLine function  in test order_supplier - *26/06/2024* - 3.24.4  
 - FIX : display totalht ligne 'non compris' - *12/04/2024* - 3.24.3  
 - FIX : Title extrafields wasn't working - *12/04/2024* - 3.24.2  
@@ -14,6 +34,7 @@ All notable changes to this project will be documented in this file.
 - NEW : Ajout des quantités par sous totaux sur l'interface - *27/03/2024* - 3.24.0
 
 # Release 3.23 - 18/12/2023
+
 - FIX : DA024939 - Added static method hasBreakPage to check if a line has a break page or not - *17/05/2024* - 3.23.10
 - FIX : DA024587 - Les totaux remisés sur le PDF Sponge sont erronés  - *20/03/2024* - 3.23.9
 - FIX : Suite a l'issue #379, la création de facture d'acompte avec un montant variable change les qté des lignes générées par le module donc on utilise un trigger pour remettre les bonnes qtés - *18/03/2024* - 3.23.8
