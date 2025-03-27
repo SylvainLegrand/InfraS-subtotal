@@ -564,7 +564,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	            $hideInnerLines	= isset( $_SESSION['subtotal_hideInnerLines_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hideInnerLines_'.$parameters['modulepart']][$object->id] : 0;
 	            $hidesubdetails	= isset( $_SESSION['subtotal_hidesubdetails_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hidesubdetails_'.$parameters['modulepart']][$object->id] : 0;	// InfraS change
 				$hidepricesDefaultConf = getDolGlobalString('SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED')?getDolGlobalString('SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED') :0;
-				$hideprices= isset( $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] : $hidepricesDefaultConf;
+				$hideprices= !empty( $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] : $hidepricesDefaultConf;
 				// InfraS change begin
 				$titleOptions	= $langs->trans('Subtotal_Options').'&nbsp;&nbsp;&nbsp;'.img_picto($langs->trans('Setup'), 'setup', 'style="vertical-align: bottom; height: 20px;"');
 				$titleStyle		= 'background: transparent !important; background-color: rgba(148, 148, 148, .065) !important; cursor: pointer;';
