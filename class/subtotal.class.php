@@ -109,6 +109,7 @@ class TSubtotal {
 
 		$res = 0;
 
+		$desc = '';
 
 		$TNotElements = array ('invoice_supplier', 'order_supplier');
 		if ($qty==50 && !in_array($object->element, $TNotElements)) {
@@ -888,29 +889,35 @@ class TSubtotal {
 	 */
 	public static function getAllTitleFromLine(&$origin_line, $reverse = false)
 	{
-		global $db, $object;
+		global $db;
 
 		$TTitle = array();
-		if (!empty($object->id) && in_array($object->element, array('propal', 'commande', 'facture'))) {
-			$origin = $object;
+		$current_object = null;
+
+		// Get the parent object if needed
+		if (!empty($GLOBALS['object']->id) && in_array($GLOBALS['object']->element, array('propal', 'commande', 'facture'))) {
+			$current_object = $GLOBALS['object'];
 		} else {
 			if ($origin_line->element == 'propaldet') {
-				$origin = new Propal($db);
-				$origin->fetch($origin_line->fk_propal);
-			} elseif ($origin_line->element == 'commandedet') {
-				$origin = new Commande($db);
-				$origin->fetch($origin_line->fk_commande);
-			} elseif ($origin_line->element == 'facturedet') {
-				$origin = new Facture($db);
-				$origin->fetch($origin_line->fk_facture);
-			} else {
+				$current_object = new Propal($db);
+				$current_object->fetch($origin_line->fk_propal);
+			}
+			else if ($origin_line->element == 'commandedet') {
+				$current_object = new Commande($db);
+				$current_object->fetch($origin_line->fk_commande);
+			}
+			else if ($origin_line->element == 'facturedet') {
+				$current_object = new Facture($db);
+				$current_object->fetch($origin_line->fk_facture);
+			}
+			else {
 				return $TTitle;
 			}
 		}
 
 		// Récupération de la position de la ligne
 		$i = 0;
-		foreach ($origin->lines as &$line) {
+		foreach ($current_object->lines as &$line) {
 			if ($origin_line->id == $line->id) break;
 			else $i++;
 		}
@@ -922,17 +929,19 @@ class TSubtotal {
 			$next_title_lvl_to_skip = 0;
 			for ($y = $i; $y >= 0; $y--) {
 				// Si je tombe sur un sous-total, je récupère son niveau pour savoir quel est le prochain niveau de titre que doit ignorer
-				if (self::isSubtotal($origin->lines[$y])) {
-					$next_title_lvl_to_skip = self::getNiveau($origin->lines[$y]);
-				} elseif (self::isTitle($origin->lines[$y])) {
-					if ($origin->lines[$y]->qty == $next_title_lvl_to_skip) {
+				if (self::isSubtotal($current_object->lines[$y])) {
+					$next_title_lvl_to_skip = self::getNiveau($current_object->lines[$y]);
+				}
+				elseif (self::isTitle($current_object->lines[$y])) {
+					if ($current_object->lines[$y]->qty == $next_title_lvl_to_skip) {
 						$next_title_lvl_to_skip = 0;
 						continue;
-					} else {
-						if (empty($origin->lines[$y]->array_options) && !empty($origin->lines[$y]->id)) $origin->lines[$y]->fetch_optionals();
-						$TTitle[$origin->lines[$y]->id] = $origin->lines[$y];
+					}
+					else {
+						if (empty($current_object->lines[$y]->array_options) && !empty($current_object->lines[$y]->id)) $current_object->lines[$y]->fetch_optionals();
+						$TTitle[$current_object->lines[$y]->id] = $current_object->lines[$y];
 
-						if ($origin->lines[$y]->qty == 1) break;
+						if ($current_object->lines[$y]->qty == 1) break;
 					}
 				}
 			}
