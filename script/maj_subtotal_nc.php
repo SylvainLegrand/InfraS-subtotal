@@ -25,7 +25,7 @@ if($resql) {
 	$db->begin();
 	while($obj = $db->fetch_object($resql)) {
 		$propal = new Propal($db);
-		var_dump($obj->rowid);
+		//var_dump($obj->rowid);
 		$propal->fetch($obj->rowid);
 
 		foreach($propal->lines as &$l) {

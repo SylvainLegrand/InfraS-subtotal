@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+## [Non Distribué]
 
 ## Release 3.28
 - FIX : DA026337 - Fix buttons on supplier object - *02/04/2025* - 3.28.3
@@ -17,6 +17,9 @@ All notable changes to this project will be documented in this file.
 - FIX : Compat V20 : Document col missing for title for NC - *16/09/2024* - 3.26.1
 - NEW : Add more order to invoice massaction option - *04/09/2024* - 3.26.0  
   Allow adding list of shipping ref to title block
+
+## [3.25.31] - 22/11/2024
+- Fix ecrasement de la global $object
 
 # Release 3.25 - 24/07/2024
 - FIX: DA025864: conf `NO_TITLE_SHOW_ON_EXPED_GENERATION` should delete all
@@ -190,3 +193,5 @@ All notable changes to this project will be documented in this file.
 - FIX : Text or title line break PDF *15/04/2021* - 3.5.7
 - NEW Ajouter les lignes 'Titre' , 'total' , 'libre' aux generation d'expedition de commandes expédiables (il faudra supprimer les lignes de sous-total à la main si le besoin s'en fait sentir ) [2021-02-03]
 
+[Non Distribué]: http://git.open-dsi.fr/dolibarr-extension/requestmanager/compare/3.25.31...HEAD
+[3.25.31]: http://git.open-dsi.fr/dolibarr-extension/requestmanager/commits/3.25.31
