@@ -125,7 +125,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
 		{
-
 			// Editor wysiwyg	// InfraS add begin
 			$toolbarname = 'dolibarr_notes';
 			$disallowAnyContent = true;
@@ -146,6 +145,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$editor_height = empty($conf->global->MAIN_DOLEDITOR_HEIGHT) ? 100 : $conf->global->MAIN_DOLEDITOR_HEIGHT;
 			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
 			// InfraS add end
+            $value = TSubtotal::getHtmlDictionnary();
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1707,7 +1707,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 	function pdf_getlinetotalexcltax($parameters=array(), &$object, &$action='') {
-	    global $conf, $hidesubdetails, $hideprices, $hookmanager;	// InfraS change
+	    global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
 		if(is_array($parameters)) $i = & $parameters['i'];
 		else $i = (int)$parameters;
@@ -1736,10 +1736,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 							dol_include_once('/infraspackplus/core/lib/infraspackplus.pdf.lib.php');
 							$TInfo							= $this->getTotalLineFromObject($object, $object->lines[$i], '', 1);
 							$TTotal_tva						= $TInfo[3];
-							$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[0], $pdf->outputlangs);
+							$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[0], $langs);
 							$object->lines[$i]->total		= $TInfo[0];
 							$object->lines[$i]->total_ht	= $TInfo[0];
-							$object->lines[$i]->total_tva	= !TSubtotal::isModSubtotalLine($line) ? $TInfo[1] : $object->lines[$i]->total_tva;
+							$object->lines[$i]->total_tva	= !TSubtotal::isModSubtotalLine($object->lines[$i]) ? $TInfo[1] : $object->lines[$i]->total_tva;
 							$object->lines[$i]->total_ttc	= $TInfo[2];
 						}
 					}
@@ -1863,7 +1863,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 	function pdf_getlinetotalwithtax($parameters=array(), &$object, &$action='') {
-		global $conf, $hidesubdetails, $hideprices, $hookmanager;	// InfraS change
+		global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
 		if(is_array($parameters)) $i = & $parameters['i'];	// InfraS add
 		else $i = (int)$parameters;	// InfraS add
@@ -1892,10 +1892,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 							dol_include_once('/infraspackplus/core/lib/infraspackplus.pdf.lib.php');
 							$TInfo							= $this->getTotalLineFromObject($object, $object->lines[$i], '', 1);
 							$TTotal_tva						= $TInfo[3];
-							$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[2], $pdf->outputlangs);
+							$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[2], $langs);
 							$object->lines[$i]->total		= $TInfo[0];
 							$object->lines[$i]->total_ht	= $TInfo[0];
-							$object->lines[$i]->total_tva	= !TSubtotal::isModSubtotalLine($line) ? $TInfo[1] : $object->lines[$i]->total_tva;
+							$object->lines[$i]->total_tva	= !TSubtotal::isModSubtotalLine($object->lines[$i]) ? $TInfo[1] : $object->lines[$i]->total_tva;
 							$object->lines[$i]->total_ttc	= $TInfo[2];
 						}
 					}
@@ -1952,7 +1952,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 	function pdf_getlineupexcltax($parameters=array(), &$object, &$action='') {
-	    global $conf, $hidesubdetails, $hideprices, $hookmanager;	// InfraS change
+	    global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
 		if(is_array($parameters)) $i = & $parameters['i'];
 		else $i = (int)$parameters;
@@ -2025,7 +2025,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 	function pdf_getlineremisepercent($parameters=array(), &$object, &$action='') {
-	    global $conf, $hidesubdetails, $hideprices, $hookmanager;	// InfraS change
+	    global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
         if(is_array($parameters)) $i = & $parameters['i'];
         else $i = (int) $parameters;
@@ -2913,15 +2913,19 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			<tr class="oddeven <?php echo $class; ?>" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))
 					{
-						if($line->qty==99) print 'background:#adadcf';          // Sub-total level 1
-						else if($line->qty==98) print 'background:#ddddff;';    // Sub-total level 2
-						else if($line->qty<=97 && $line->qty>=91) print 'background:#eeeeff;';  // Sub-total level 3 to 9
-						else if($line->qty==1) print 'background:#adadcf;';     // Title level 1
-						else if($line->qty==2) print 'background:#ddddff;';     // Title level 2
-						else if($line->qty==50) print '';                       // Free text
-						else print 'background:#eeeeff;';                       // Title level 3 to 9
-
-						// À compléter si on veut plus de nuances de couleurs avec les niveaux 4,5,6,7,8 et 9
+						// InfraS change begin
+						if ($line->qty <= 99 && $line->qty >= 91) {
+							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (20 - (109 - $line->qty)) / 10;
+							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty >= 1 && $line->qty <= 9) {
+							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (11 - $line->qty) / 10;
+							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty == 50) {	// Free text
+							print '';
+						}
+						// InfraS change end
 					}
 					else
 					{
@@ -3278,7 +3282,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				}
 			?>
 
-			<td align="center" class="nowrap linecoledit">
+			<td class="center nowrap linecoledit">	<!-- InfraS change -->
 				<?php
 				if ($action != 'selectlines') {
 
@@ -3322,7 +3326,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				?>
 			</td>
 
-			<td align="center" class="nowrap linecoldelete">
+			<td class="center nowrap linecoldelete">	<!-- InfraS change -->
 				<?php
 
 				if ($action != 'editline' && $action != 'selectlines') {
@@ -3480,15 +3484,19 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			<tr class="oddeven" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
-                        if($line->qty==99) print 'background:#adadcf';          // Sub-total level 1
-                        else if($line->qty==98) print 'background:#ddddff;';	// Sub-total level 2
-                        else if($line->qty<=97 && $line->qty>=91) print 'background:#eeeeff;';	// Sub-total level 3 to 9
-                        else if($line->qty==1) print 'background:#adadcf;';     // Title level 1
-                        else if($line->qty==2) print 'background:#ddddff;';     // Title level 2
-                        else if($line->qty==50) print '';                       // Free text
-                        else print 'background:#eeeeff;';                       // Title level 3 to 9
-
-						// À compléter si on veut plus de nuances de couleurs avec les niveaux 4,5,6,7,8 et 9
+						// InfraS change begin
+						if ($line->qty <= 99 && $line->qty >= 91) {
+							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (20 - (109 - $line->qty)) / 10;
+							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty >= 1 && $line->qty <= 9) {
+							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (11 - $line->qty) / 10;
+							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty == 50) {	// Free text
+							print '';
+						}
+						// InfraS change end
 					}
 					else
 					{
@@ -3605,15 +3613,19 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			<tr class="oddeven" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
-                        if($line->qty==99) print 'background:#adadcf';          // Sub-total level 1
-                        else if($line->qty==98) print 'background:#ddddff;';	// Sub-total level 2
-                        else if($line->qty<=97 && $line->qty>=91) print 'background:#eeeeff;';	// Sub-total level 3 to 9
-                        else if($line->qty==1) print 'background:#adadcf;';     // Title level 1
-                        else if($line->qty==2) print 'background:#ddddff;';     // Title level 2
-                        else if($line->qty==50) print '';                       // Free text
-                        else print 'background:#eeeeff;';                       // Title level 3 to 9
-
-						// À compléter si on veut plus de nuances de couleurs avec les niveaux 4,5,6,7,8 et 9
+						// InfraS change begin
+						if ($line->qty <= 99 && $line->qty >= 91) {
+							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (20 - (109 - $line->qty)) / 10;
+							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty >= 1 && $line->qty <= 9) {
+							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
+							$opacity = (11 - $line->qty) / 10;
+							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+						} elseif ($line->qty == 50) {	// Free text
+							print '';
+						}
+						// InfraS change end
 					}
 					else
 					{
@@ -3756,15 +3768,16 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$object->tpl['sub-tr-style'] = '';
 				if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 				{
-                    if($line->qty==99) $object->tpl['sub-tr-style'].= 'background:#adadcf';         // Sub-total level 1
-                    else if($line->qty==98) $object->tpl['sub-tr-style'].= 'background:#ddddff;';	// Sub-total level 2
-                    else if($line->qty<=97 && $line->qty>=91) $object->tpl['sub-tr-style'].= 'background:#eeeeff;';	// Sub-total level 3 to 9
-                    else if($line->qty==1) $object->tpl['sub-tr-style'].= 'background:#adadcf;';	// Title level 1
-                    else if($line->qty==2) $object->tpl['sub-tr-style'].= 'background:#ddddff;';	// Title level 2
-                    else if($line->qty==50) $object->tpl['sub-tr-style'].= '';                      // Free text
-                    else $object->tpl['sub-tr-style'].= 'background:#eeeeff;';                      // Sub-total level 1 and 3 to 9
+					// InfraS change begin
+					if($line->qty==99) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf').';';          // Sub-total level 1
+					else if($line->qty==98) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#ddddff').';';    // Sub-total level 2
+					else if($line->qty<=97 && $line->qty>=91) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#eeeeff').';';  // Sub-total level 3 to 9
+					else if($line->qty==1) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf').';';     // Title level 1
+					else if($line->qty==2) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#ddddff').';';     // Title level 2
+					else if($line->qty==50) print '';                       // Free text
+					else print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#eeeeff').';';                       // Title level 3 to 9
 
-					// À compléter si on veut plus de nuances de couleurs avec les niveaux 4,5,6,7,8 et 9
+					// InfraS change end
 				}
 				else
 				{

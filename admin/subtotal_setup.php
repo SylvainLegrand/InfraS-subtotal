@@ -310,8 +310,8 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 	// Conserver le PDF de récapitulation après la fusion
 	$formSetup->newItem('SUBTOTAL_KEEP_RECAP_FILE')->setAsYesNo();
 
-	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 380)
-	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 381)
+	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 373)
+	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 374)
 
 	// Activer la génération du récapitulatif sur les commandes
 	$formSetup->newItem('SUBTOTAL_COMMANDE_ADD_RECAP')->setAsYesNo();
@@ -370,8 +370,9 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 	$item->setAsYesNo();
 	$item->nameText = $langs->trans("SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
 
-	// Activer la génération du récapitulatif sur les propositions commerciales
-	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();
+	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 313)
+	//$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 314)
+	}	// InfraS add
 }
 
 
