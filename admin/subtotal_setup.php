@@ -151,6 +151,8 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 
 	// L'ajout sous un titre se fera en fin de section
 	$formSetup->newItem('SUBTOTAL_ADD_LINE_UNDER_TITLE_AT_END_BLOCK')->setAsYesNo();
+
+	$formSetup->newItem('SUBTOTAL_HIDE_FOLDERS_BY_DEFAULT')->setAsYesNo();
 }
 
 // Cacher les options du titre
@@ -353,21 +355,24 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
  */
 
 
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update')) || (float) DOL_VERSION < 17) {
 	if (!getDolGlobalInt('MAIN_MODULE_INFRASPACKPLUS')) {	// InfraS add
-	$formSetup->newItem('SubtotalExperimentalZone')->setAsTitle();
+		$formSetup->newItem('SubtotalExperimentalZone')->setAsTitle();
 
 
-	// Avoir une seule ligne de titre + total si l'option "Cacher le détail des ensembles" est utilisée (expérimental)
-	$item = $formSetup->newItem('SUBTOTAL_ONE_LINE_IF_HIDE_INNERLINES');
-	$item->setAsYesNo();
-	$item->nameText = $langs->trans("SUBTOTAL_ONE_LINE_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
+		// Avoir une seule ligne de titre + total si l'option "Cacher le détail des ensembles" est utilisée (expérimental)
+		$item = $formSetup->newItem('SUBTOTAL_ONE_LINE_IF_HIDE_INNERLINES');
+		$item->setAsYesNo();
+		$item->nameText = $langs->trans("SUBTOTAL_ONE_LINE_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
 
-	// Remplacer par le détail des TVA si l'option "Cacher le détail des ensembles" est utilisée (expérimental)
-	$item = $formSetup->newItem('SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES');
-	$item->setAsYesNo();
-	$item->nameText = $langs->trans("SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
-	}	// InfraS add
+		// Remplacer par le détail des TVA si l'option "Cacher le détail des ensembles" est utilisée (expérimental)
+		$item = $formSetup->newItem('SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES');
+		$item->setAsYesNo();
+		$item->nameText = $langs->trans("SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
+
+		// Activer la génération du récapitulatif sur les propositions commerciales
+		$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();
+	}
 }
 
 
@@ -409,7 +414,6 @@ echo '<span class="opacitymedium">'.$langs->trans("SubTotalSetupPage").'</span><
 
 
 if ($action == 'edit') {
-
 	print $formSetup->generateOutput(true);
 	print '<br>';
 } else {
