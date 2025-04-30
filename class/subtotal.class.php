@@ -105,7 +105,7 @@ class TSubtotal {
 	 * @return int
 	 *
 	 */
-	static function addSubTotalLine(&$object, $label, $qty, $rang=-1, $desc = '') {
+	static function addSubTotalLine(&$object, $label, $qty, $rang=-1, $desc = '') {	// InfraS change
 
 		$res = 0;
 
