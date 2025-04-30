@@ -356,9 +356,9 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 
 
 if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
-	if (!getDolGlobalInt('MAIN_MODULE_INFRASPACKPLUS')) {	// InfraS add
-	$formSetup->newItem('SubtotalExperimentalZone')->setAsTitle();
-
+	if (!getDolGlobalInt('MAIN_MODULE_INFRASPACKPLUS')) {    // InfraS add
+		$formSetup->newItem('SubtotalExperimentalZone')->setAsTitle();
+	}
 
 	// Avoir une seule ligne de titre + total si l'option "Cacher le détail des ensembles" est utilisée (expérimental)
 	$item = $formSetup->newItem('SUBTOTAL_ONE_LINE_IF_HIDE_INNERLINES');
