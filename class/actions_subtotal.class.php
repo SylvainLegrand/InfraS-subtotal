@@ -146,6 +146,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
 			// InfraS add end
             $value = TSubtotal::getHtmlDictionnary();
+
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -437,7 +438,23 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						{
 							if (typeof use_textarea != 'undefined' && use_textarea && typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined" )
 							{
-								 CKEDITOR.replace( 'sub-total-title', {toolbar: 'dolibarr_details', versionCheck: false, toolbarStartupExpanded: false} );
+								CKEDITOR.replace('sub-total-title', {
+									toolbar: 'dolibarr_details',
+									versionCheck: false,
+									toolbarStartupExpanded: false,
+
+									// Intégration du filemanager via les variables JS de Dolibarr
+									filebrowserBrowseUrl: ckeditorFilebrowserBrowseUrl,
+									filebrowserImageBrowseUrl: ckeditorFilebrowserImageBrowseUrl,
+									// filebrowserUploadUrl: DOL_URL_ROOT + '/includes/fckeditor/editor/filemanagerdol/connectors/php/upload.php?Type=File',
+									// filebrowserImageUploadUrl: DOL_URL_ROOT + '/includes/fckeditor/editor/filemanagerdol/connectors/php/upload.php?Type=Image',
+
+									// Dimensions des fenêtres popup
+									filebrowserWindowWidth: '900',
+									filebrowserWindowHeight: '500',
+									filebrowserImageWindowWidth: '900',
+									filebrowserImageWindowHeight: '500'
+								});
 							}
 						}
 						<?php } ?>
@@ -1083,6 +1100,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
         $total_qty = 0;
 		$TTotal_tva = array();
 		$TTotal_tva_array = array();	// InfraS add
+		$multicurrency_total_ht = 0;	// InfraS add
+		$multicurrency_total_ttc = 0;	// InfraS add
 
 
 		$sign=1;
@@ -1113,6 +1132,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		{
 			$l->total_ttc = doubleval($l->total_ttc);
 			$l->total_ht = doubleval($l->total_ht);
+			$l->multicurrency_total_ht = doubleval($l->multicurrency_total_ht);	// InfraS add
+			$l->multicurrency_total_ttc = doubleval($l->multicurrency_total_ttc);	// InfraS add
 			$isOuvrage	= !empty(isModEnabled('ouvrage')) && Ouvrage::isOuvrage($l) ? 1 : 0;	// InfraS add
 
 			//print $l->rang.'>='.$rang.' '.$total.'<br/>';
@@ -1142,14 +1163,17 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                         if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
                         if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
                         if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-
+						if ($l->multicurrency_total_ht != 0)	$multicurrency_total_ht += ($sign * ($l->multicurrency_total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
+						if ($l->multicurrency_total_ttc != 0)	$multicurrency_total_ttc += ($sign * ($l->multicurrency_total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
                     }
 					else {	// InfraS add begin
 						if ($l->product_type != 9) {
-										$total += $l->total_ht * $totalQty;	// InfraS change
-										$total_tva += $l->total_tva * $totalQty;	// InfraS change
-										$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
-										$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+										$total += $l->total_ht * $totalQty;
+										$total_tva += $l->total_tva * $totalQty;
+										$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
+										$total_ttc += $l->total_ttc * $totalQty;
+										$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
+										$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
 						}
 					}
 					// InfraS add end
@@ -1159,6 +1183,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					if ($l->product_type != 9) {
 									$total += $l->total_ht * $totalQty;	// InfraS change
 									$total_tva += $l->total_tva * $totalQty;	// InfraS change
+									$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
 
 									if(! isset($TTotal_tva[$l->tva_tx])) {
 										$TTotal_tva[$l->tva_tx] = 0;
@@ -1166,6 +1191,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 									$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
 
 									$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+									$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
 									// InfraS add begin
 									$vatrate = (string) $l->tva_tx;
 									if (($l->info_bits & 0x01) == 0x01) {
@@ -1182,7 +1208,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
             }
 		}
 		if (!$return_all) return $total;
-		else return array($total, $total_tva, $total_ttc, $TTotal_tva, $total_qty, $TTotal_tva_array);	// InfraS change
+		else return array($total, $total_tva, $total_ttc, $TTotal_tva, $total_qty, $TTotal_tva_array, $multicurrency_total_ht, $multicurrency_total_ttc);	// InfraS change
 	}
 
 	/**
@@ -1209,6 +1235,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		empty($pdf->marge_droite) ? $pdf->marge_droite = 0 : '';
 		empty($line->total) ? $line->total = 0 : '' ;
 		empty($pdf->postotalht) ? $pdf->postotalht = 0 : '' ;
+		$use_multicurrency	= isModEnabled('multicurrency') && isset($object->multicurrency_tx) && $object->multicurrency_tx != 1 ? 1 : 0;	// InfraS add
 
 		$fillBackground = false;
 		if(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR')
@@ -1358,6 +1385,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		if (!$hidePriceOnSubtotalLines) {
 			$total_to_print = price($line->total,0,'',1,0,getDolGlobalInt('MAIN_MAX_DECIMALS_TOT'));
+			// InfraS add begin
+			if ($use_multicurrency) {
+				$total_to_print = price($line->multicurrency_total_ht,0,'',1,0,getDolGlobalInt('MAIN_MAX_DECIMALS_TOT'));
+			}
+			// InfraS add end
 			if (getDolGlobalString('SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS'))
 			{
 				$TTitle = TSubtotal::getAllTitleFromLine($line);
@@ -1389,6 +1421,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					$TInfo = $this->getTotalLineFromObject($object, $line, '', 1);
 					$TTotal_tva = $TInfo[3];
 					$total_to_print = price($TInfo[0],0,'',1,0,getDolGlobalInt('MAIN_MAX_DECIMALS_TOT'));
+					// InfraS add begin
+					if ($use_multicurrency) {
+						$total_to_print = price($TInfo[6],0,'',1,0,getDolGlobalInt('MAIN_MAX_DECIMALS_TOT'));
+					}
+					// InfraS add end
 
                     $line->total_ht = $TInfo[0];
 					$line->total = $TInfo[0];
@@ -1715,6 +1752,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		if($this->isModSubtotalLine($parameters,$object) ){
 
 			// InfraS add begin
+			$use_multicurrency	= isModEnabled('multicurrency') && isset($object->multicurrency_tx) && $object->multicurrency_tx != 1 ? 1 : 0;
 			if (!empty($parameters['infrasplus'])) {
 				$hidePriceOnSubtotalLines = $object->element == 'shipping' || $object->element == 'delivery' ? 1 : GETPOST('hide_price_on_subtotal_lines', 'int');
 				if (empty($hidePriceOnSubtotalLines)) {
@@ -1737,10 +1775,15 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 							$TInfo							= $this->getTotalLineFromObject($object, $object->lines[$i], '', 1);
 							$TTotal_tva						= $TInfo[3];
 							$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[0], $langs);
+							if ($use_multicurrency) {
+								$total_to_print					= pdf_InfraSPlus_price($object, $TInfo[6], $langs);
+							}
 							$object->lines[$i]->total		= $TInfo[0];
 							$object->lines[$i]->total_ht	= $TInfo[0];
 							$object->lines[$i]->total_tva	= !TSubtotal::isModSubtotalLine($object->lines[$i]) ? $TInfo[1] : $object->lines[$i]->total_tva;
 							$object->lines[$i]->total_ttc	= $TInfo[2];
+							$object->lines[$i]->multicurrency_total_ht	= $TInfo[6];
+							$object->lines[$i]->multicurrency_total_ttc	= $TInfo[7];
 						}
 					}
 					$this->resprints	= !empty($total_to_print) ? $total_to_print : ' ';
@@ -2959,6 +3002,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
                     /* Total */
                     $TSubtotalDatas = $this->getTotalLineFromObject($object, $line, '', 1);
                     $total_line = $TSubtotalDatas[0];
+					$multicurrency_total_line = $TSubtotalDatas[6];	// InfraS add
                     $total_qty = $TSubtotalDatas[4];
                     if ($show_qty_bu_deault = TSubtotal::showQtyForObject($object)) {
                         $line_show_qty = TSubtotal::showQtyForObjectLine($line, $show_qty_bu_deault);
@@ -3162,7 +3206,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						$titleStyleUnderline =  strpos($style, 'U') === false ? '' : ' text-decoration: underline;';
 
 
-						$total_line = $this->getTotalLineFromObject($object, $line, '');
+						// $total_line = $this->getTotalLineFromObject($object, $line, '');	// InfraS change $total_line is already calculated in the previous block
 
 						//Marge :
 						$style = $line->qty>90 ? 'text-align:right;font-weight:bold;' : '';
@@ -3272,7 +3316,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					/* Total */
 					echo '<td class="linecolht nowrap" align="right" style="font-weight:bold;" rel="subtotal_total">'.price($total_line).'</td>';
 					if (isModEnabled('multicurrency') && ($object->multicurrency_code != $conf->currency)) {
-						echo '<td class="linecoltotalht_currency">&nbsp;</td>';
+						echo '<td class="linecoltotalht_currency right bold">'.price($multicurrency_total_line).'</td>';	// InfraS change
 					}
 				} else {
 					echo '<td class="linecolht movetitleblock">&nbsp;</td>';
