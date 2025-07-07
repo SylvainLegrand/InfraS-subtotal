@@ -161,7 +161,6 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 		require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 
-
         if ($action == 'LINEBILL_UPDATE'){
 			$action = 'LINEBILL_MODIFY';
 		}
@@ -260,27 +259,47 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 
         if (getDolGlobalString('SUBTOTAL_ALLOW_ADD_LINE_UNDER_TITLE') && in_array($action, array('LINEPROPAL_INSERT', 'LINEORDER_INSERT', 'LINEBILL_INSERT')))
 		{
-			$rang = GETPOST('under_title', 'int'); // Rang du titre
-			if ($rang > 0)
-			{
+			$id = GETPOST('under_title', 'int'); // InfraS change: Id du titre
+			if ($id > 0) {	// InfraS change
 				switch ($action) {
 					case 'LINEPROPAL_INSERT':
-						$parent = new Propal($this->db);
+						$parent  = new Propal($this->db);
 						$parent->fetch($object->fk_propal);
+                        // InfraS add begin
+                        $lineobj = new PropaleLigne($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
 					case 'LINEORDER_INSERT':
 						$parent = new Commande($this->db);
 						$parent->fetch($object->fk_commande);
+                        // InfraS add begin
+                        $lineobj = new OrderLine($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
 					case 'LINEBILL_INSERT':
 						$parent = new Facture($this->db);
 						$parent->fetch($object->fk_facture);
+                        // InfraS add begin
+                        $lineobj = new FactureLigne($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
                     case 'LINEBILL_SUPPLIER_CREATE':
                         $parent = new FactureFournisseur($this->db);
                         $parent->fetch($object->fk_facture_fourn);
+                        // InfraS add begin
+                        $lineobj = new SupplierInvoiceLine($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 					default:
 						$parent = $object;
+                        $rang   = null;	// InfraS add
 						break;
 				}
 

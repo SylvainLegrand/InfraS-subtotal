@@ -374,8 +374,12 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 	}	// InfraS add
 }
 
-
-
+// InfraS add begin
+if (isModEnabled('oblyon') && !empty(getDolGlobalString('MAIN_MENU_INVERT')) && !empty(getDolGlobalString('OBLYON_HIDE_LEFTMENU')) ) {
+	// Désactiver le sommaire rapide
+	dolibarr_set_const($db, 'SUBTOTAL_DISABLE_SUMMARY', 1, 'chaine', 0, '', $conf->entity);
+}
+// InfraS add end
 
 /*
  * Actions

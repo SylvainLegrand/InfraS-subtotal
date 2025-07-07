@@ -2835,6 +2835,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		$num = &$parameters['num'];
 		$line = &$parameters['line'];
 		$i = &$parameters['i'];
+		$fa = getDolGlobalString('MAIN_FONTAWESOME_ICON_STYLE', 'fa');	// InfraS add
 
 		$var = &$parameters['var'];
 
@@ -2892,7 +2893,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
             {
                 if(empty($line->fk_prev_id)) $line->fk_prev_id = null;
                 if(($object->element != 'shipping' && $object->element != 'delivery')&& !(TSubtotal::isModSubtotalLine($line)) && ( $line->fk_prev_id === null ) && !($action == "editline" && GETPOST('lineid', 'int') == $line->id)) {
-                    echo '<a name="duplicate-'.$line->id.'" href="' . $_SERVER['PHP_SELF'] . '?' . $idvar . '=' . $object->id . '&action=duplicate&lineid=' . $line->id . '&token='.$newToken.'"><i class="fa fa-clone" aria-hidden="true"></i></a>';
+                    echo '<a name="duplicate-'.$line->id.'" href="' . $_SERVER['PHP_SELF'] . '?' . $idvar . '=' . $object->id . '&action=duplicate&lineid=' . $line->id . '&token='.$newToken.'"><i class="'.$fa.' fa-clone" aria-hidden="true"></i></a>'; // InfraS change
 
                     ?>
                         <script type="text/javascript">
@@ -3353,7 +3354,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 							if(TSubtotal::isTitle($line) && ( $line->fk_prev_id === null )) {
 								echo '<a class="subtotal-line-action-btn" title="'.$langs->trans('CloneLSubtotalBlock').'" href="'.$_SERVER['PHP_SELF'].'?'.$idvar.'='.$object->id.'&action=duplicate&lineid='.$line->id.'&token='.$newToken.'" >';
 
-                                echo '<i class="fa fa-clone" aria-hidden="true"></i>';
+                                echo '<i class="'.$fa.' fa-clone" aria-hidden="true"></i>'; // InfraS change
 
 								echo '</a>';
 							}
