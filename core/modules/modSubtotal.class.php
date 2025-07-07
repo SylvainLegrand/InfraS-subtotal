@@ -69,7 +69,7 @@ class modSubtotal extends DolibarrModules
 		$this->description = "Module permettant d'ajouter des titres, sous-totaux et des sous-totaux intermédiaires dans un tableau ou une liste, tout en facilitant le déplacement fluide d'une ligne d'éléments d'un sous-total à un autre.";
 		// Possible values for version are: 'development', 'experimental' or version
 
-		$this->version = '3.28.40';
+		$this->version = '3.28.41';
 
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
@@ -318,6 +318,10 @@ class modSubtotal extends DolibarrModules
 		$extra->addExtraField('print_condensed', 'Imprimer le contenu de manière condensé', 'int', 4, 2, 'propaldet', 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 		$extra->addExtraField('print_condensed', 'Imprimer le contenu de manière condensé', 'int', 4, 2, 'commandedet', 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 		$extra->addExtraField('print_condensed', 'Imprimer le contenu de manière condensé', 'int', 4, 2, 'facturedet', 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
+		if (isModEnabled('oblyon') && !empty(getDolGlobalString('MAIN_MENU_INVERT')) && !empty(getDolGlobalString('OBLYON_HIDE_LEFTMENU')) ) {
+			// Désactive le sommaire rapide
+			dolibarr_set_const($db, 'SUBTOTAL_DISABLE_SUMMARY', 1, 'chaine', 0, '', $conf->entity);
+		}
 		// InfraS add end
 		return $this->_init($sql, $options);
 	}
