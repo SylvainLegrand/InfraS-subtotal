@@ -294,7 +294,10 @@ $item->helpText = $langs->transnoentities('SUBTOTAL_DEFAULT_DISPLAY_QTY_FOR_SUBT
 if(!in_array($action, array('edit', 'update'))) {
 	$formSetup->newItem('NO_TITLE_SHOW_ON_EXPED_GENERATION')->setAsYesNo();
 }
-
+// InfraS add begin
+// Afficher le taux de TVA sur les lignes de sous-totaux
+$formSetup->newItem('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')->setAsYesNo();
+// InfraS add end
 /*
  * Génération d'un récapitulatif par titre
  */

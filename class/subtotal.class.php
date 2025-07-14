@@ -1564,4 +1564,76 @@ class TSubtotal {
 		}
 		return $value;
 	}
+
+	// InfraS add begin
+	/**
+	 * Retourne le taux de TVA unique des lignes comprises entre un Titre et un Sous-total de même niveau.
+	 * On peut appeler cette fonction en partant d'un titre ou d'un sous-total.
+	 *
+	 * @param CommonObject     					  $object	Objet Dolibarr (Propal, Commande, Facture…)
+	 * @param PropaleLigne|OrderLine|FactureLigne $lineRef	Ligne de type titre ou sous-total
+	 * @return float|false									Taux de TVA homogène ou false si taux différents
+	 */
+	public static function getCommonVATRate($object, $lineRef)
+	{
+		if (!TSubtotal::isTitle($lineRef) && !TSubtotal::isSubtotal($lineRef)) {
+			return false;
+		}
+		$niveau 	= TSubtotal::getNiveau($lineRef);
+		$tva_unique = null;
+		$start_rang = null;
+		$end_rang 	= null;
+		// Cherche les bornes du bloc
+		if (TSubtotal::isTitle($lineRef)) {
+			$start_rang = $lineRef->rang;
+			foreach ($object->lines as $line) {
+				if ($line->rang <= $start_rang) {
+					continue;
+				}
+				// Si on rencontre un sous-total du même niveau que le titre initial, on marque la fin du bloc.
+				if (TSubtotal::isSubtotal($line) && TSubtotal::getNiveau($line) == $niveau) {
+					$end_rang = $line->rang;
+					break;
+				}
+				// Si on rencontre un autre titre de niveau inférieur ou égal **avant** de trouver un sous-total de même niveau,
+				// OU si l'option "Fusionner les sous-totaux avec les sous-titres" n'est pas activée,
+				if ((TSubtotal::isTitle($line) && TSubtotal::getNiveau($line) <= $niveau) || empty(getDolGlobalInt('INFRASPLUS_PDF_SUBTI_WITH_SUBTO', 0))) {
+					return false;
+				}
+			}
+		} elseif (TSubtotal::isSubtotal($lineRef)) {
+			$end_rang = $lineRef->rang;
+			for ($i = count($object->lines) - 1; $i >= 0; $i--) {
+				$line = $object->lines[$i];
+				if ($line->rang >= $end_rang) {
+					continue;
+				}
+				// Si on rencontre un titre du même niveau que la ligne de départ, on marque le début du bloc.
+				if (TSubtotal::isTitle($line) && TSubtotal::getNiveau($line) == $niveau) {
+					$start_rang = $line->rang;
+					break;
+				}
+			}
+		}
+		// Si une des bornes n’est pas trouvée
+		if ($start_rang === null || $end_rang === null) {
+			return false;
+		}
+		// Analyse des lignes normales(produits, services) entre les deux bornes
+		foreach ($object->lines as $line) {
+			if ($line->rang <= $start_rang || $line->rang >= $end_rang) {
+				continue;
+			}
+			if (!TSubtotal::isModSubtotalLine($line)) {
+				$tva_tx = $line->tva_tx;
+				if ($tva_unique === null) {
+					$tva_unique = $tva_tx;
+				} elseif ($tva_tx !== $tva_unique) {
+					return false;
+				}
+			}
+		}
+		return $tva_unique;
+	}
+	// InfraS add end
 }
