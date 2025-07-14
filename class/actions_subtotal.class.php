@@ -2155,15 +2155,28 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 //		// TODO : peut être faire l'inverse : limiter à certains elements plutot que le faire pour tous ... à voir si un autre PB du genre apparait.
 		$TContext	= explode(':', $parameters['context']);	// InfraS add
 		if (in_array('expensereportcard', $TContext))	return 0;	// InfraS add
-
-		if($this->isModSubtotalLine($parameters,$object) ){
-			$this->resprints = ' ';
-            return 1;
-
+		// InfraS change begin
+		// Move up from line 2175
+		if (is_array($parameters)) {
+			$i = & $parameters['i'];
+		} else {
+			$i = (int)$parameters;
 		}
 
-		if(is_array($parameters)) $i = & $parameters['i'];
-		else $i = (int)$parameters;
+		if($this->isModSubtotalLine($parameters,$object)){
+			// Vérifie le taux de TVA des lignes comprises entre un Titre et un Sous-total de même niveau.
+			$tva_unique = TSubtotal::getCommonVATRate($object, $object->lines[$i]);
+			// Si un taux unique est trouvé, on l'affiche dans la colonne TVA
+			if (!empty(getDolGlobalString('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')) && $tva_unique !== false) {
+				$this->resprints = vatrate($tva_unique, true);
+			} else {
+				$this->resprints = '';
+			}
+            return 1;
+		}
+		// InfraS change end
+//		if(is_array($parameters)) $i = & $parameters['i']; // InfraS move up
+//		else $i = (int)$parameters; // InfraS move up
 
 		if (empty($object->lines[$i])) return 0; // hideInnerLines => override $object->lines et Dolibarr ne nous permet pas de mettre à jour la variable qui conditionne la boucle sur les lignes (PR faite pour 6.0)
 
