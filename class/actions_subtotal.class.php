@@ -1895,10 +1895,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		{
 			$this->resprints = $hookmanager->resprints;
 
-			// override return (use  $this->results['overrideReturn'] or $this->resArray['overrideReturn'] in other module action_xxxx.class.php )
-			if(isset($hookmanager->resArray['overrideReturn']))
+			// override return (use $this->results['overrideReturn'] or $this->resArray['overrideReturn'] in other module action_xxxx.class.php )
+			if(isset($this->results['overrideReturn']))
 			{
-				return $hookmanager->resArray['overrideReturn'];
+				return $this->results['overrideReturn'];
 			}
 		}
 
@@ -4095,7 +4095,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	    if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 	    if ($reshook>0)
 	    {
-	        $ThtmlData = $hookmanager->resArray;
+	        $ThtmlData = $this->results;
 	    }
 
 	    return $this->implodeHtmlData($ThtmlData);
