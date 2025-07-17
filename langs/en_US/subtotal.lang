@@ -114,6 +114,7 @@ SUBTOTAL_SHIPPABLE_ORDER=Setting up the line management option of the subTotal m
 CloneLSubtotalBlock=Clone the title/subtotal block
 NO_TITLE_SHOW_ON_EXPED_GENERATION=Do not carry over title lines when generating shipments
 SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS = Show VAT rate with subtotals if all rows in the block have the same rate
+SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS= Limit the display of the VAT rate to blocks printed in condensed or list format.
 Error_subtotal_delete_line=Error when deleting a line from the subtotal module
 ErrorLoadingLinesFromLinkedOrder=Error while loading the command lines associated with the shipment
 ErrorLoadingLinkedOrder=Error while loading the order associated with shipping
