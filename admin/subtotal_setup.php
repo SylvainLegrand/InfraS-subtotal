@@ -273,7 +273,9 @@ $extrafields = new ExtraFields($db);
 $extralabels = $extrafields->fetch_name_optionals_label('facturedet');
 $item->setAsMultiSelect($extralabels);
 
-
+/*
+ * Configuration
+ */
 $formSetup->newItem('Setup')->setAsTitle();
 
 // Activer l'affichage de la somme des quantités sur les lignes de sous-totaux pour les modèles de documents :
@@ -297,7 +299,12 @@ if(!in_array($action, array('edit', 'update'))) {
 // InfraS add begin
 // Afficher le taux de TVA sur les lignes de sous-totaux
 $formSetup->newItem('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')->setAsYesNo();
+// Limiter l'affichage du taux de TVA aux lignes de sous-totaux
+if (!empty(getDolGlobalInt('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')) && isModEnabled('infraspackplus')) {
+	$formSetup->newItem('SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS')->setAsYesNo();
+}
 // InfraS add end
+
 /*
  * Génération d'un récapitulatif par titre
  */
