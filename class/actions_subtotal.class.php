@@ -2167,7 +2167,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// Vérifie le taux de TVA des lignes comprises entre un Titre et un Sous-total de même niveau.
 			$tva_unique = TSubtotal::getCommonVATRate($object, $object->lines[$i]);
 			// Si un taux unique est trouvé, on l'affiche dans la colonne TVA
-			if (!empty(getDolGlobalString('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')) && $tva_unique !== false 
+			if (!empty(getDolGlobalString('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')) && $tva_unique !== false
 				&& (!getDolGlobalInt('SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS') || (getDolGlobalInt('SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS')
 				&& ((!empty($object->lines[$i]->array_options['options_print_as_list']) && $object->lines[$i]->array_options['options_print_as_list'] > 0)
 				|| (!empty($object->lines[$i]->array_options['options_print_condensed']) && $object->lines[$i]->array_options['options_print_condensed'] > 0))))) {
