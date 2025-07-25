@@ -76,12 +76,7 @@ $value = GETPOST('value', 'alpha');
 $label = GETPOST('label', 'alpha');
 
 if(!class_exists('FormSetup')){
-	// une Pr est en cour pour fixer certains elements de la class en V16 (car c'est des fix/new)
-	if (versioncompare(explode('.' , DOL_VERSION), array(16)) < 0){	// InfraS change => fix problem on update
-		require_once __DIR__.'/../backport/v16/core/class/html.formsetup.class.php';
-	} else {
-		require_once DOL_DOCUMENT_ROOT.'/core/class/html.formsetup.class.php';
-	}
+	require_once DOL_DOCUMENT_ROOT.'/core/class/html.formsetup.class.php';
 }
 
 $formSetup = new FormSetup($db);
@@ -119,7 +114,7 @@ $formSetup->newItem('SUBTOTAL_MYPARAM7')->setAsProduct();
 */
 
 // Activer l'utilisation avancée
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	$item = $formSetup->newItem('SUBTOTAL_USE_NEW_FORMAT');
 	$item->setAsYesNo();
 	$item->helpText = $langs->transnoentities('SUBTOTAL_USE_NEW_FORMAT_HELP');
@@ -239,7 +234,7 @@ $TField = array(
 $item->setAsMultiSelect($TField);
 
 
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	// La gestion des non-compris vide aussi le prix de revient
 	$item = $formSetup->newItem('SUBTOTAL_NONCOMPRIS_UPDATE_PA_HT');
 	$item->setAsYesNo();
@@ -254,7 +249,7 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {	// 
 
 $formSetup->newItem('SetupForExtrafields')->setAsTitle();
 
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	// Autoriser l'affichage des extrafields sur les titres (les données enregistrées seront alors peuplées sur les lignes du bloc)
 	$formSetup->newItem('SUBTOTAL_ALLOW_EXTRAFIELDS_ON_TITLE')->setAsYesNo();
 }
@@ -278,7 +273,9 @@ $extrafields = new ExtraFields($db);
 $extralabels = $extrafields->fetch_name_optionals_label('facturedet');
 $item->setAsMultiSelect($extralabels);
 
-
+/*
+ * Configuration
+ */
 $formSetup->newItem('Setup')->setAsTitle();
 
 // Activer l'affichage de la somme des quantités sur les lignes de sous-totaux pour les modèles de documents :
@@ -296,22 +293,30 @@ $item->setAsMultiSelect($TField);
 $item->helpText = $langs->transnoentities('SUBTOTAL_DEFAULT_DISPLAY_QTY_FOR_SUBTOTAL_ON_ELEMENTS_info');
 
 // Ne pas reporter les lignes de titre lors de la génération d’expédition
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	$formSetup->newItem('NO_TITLE_SHOW_ON_EXPED_GENERATION')->setAsYesNo();
 }
+// InfraS add begin
+// Afficher le taux de TVA sur les lignes de sous-totaux
+$formSetup->newItem('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')->setAsYesNo();
+// Limiter l'affichage du taux de TVA aux lignes de sous-totaux
+if (!empty(getDolGlobalInt('SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS')) && isModEnabled('infraspackplus')) {
+	$formSetup->newItem('SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS')->setAsYesNo();
+}
+// InfraS add end
 
 /*
  * Génération d'un récapitulatif par titre
  */
 
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	$formSetup->newItem('RecapGeneration')->setAsTitle();
 
 	// Conserver le PDF de récapitulation après la fusion
 	$formSetup->newItem('SUBTOTAL_KEEP_RECAP_FILE')->setAsYesNo();
 
-	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 380)
-	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 381)
+	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 373)
+	$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 374)
 
 	// Activer la génération du récapitulatif sur les commandes
 	$formSetup->newItem('SUBTOTAL_COMMANDE_ADD_RECAP')->setAsYesNo();
@@ -323,7 +328,7 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
 /*
  * Paramètrage de l'option "Cacher le prix des lignes des ensembles"
  */
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
+if(!in_array($action, array('edit', 'update'))) {
 	$formSetup->newItem('SetupForSubBlocs')->setAsTitle();
 
 	// Par defaut, cocher la case "Cacher le prix des lignes des ensembles" lors de la génération des PDF
@@ -355,8 +360,8 @@ if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {
  */
 
 
-if(!in_array($action, array('edit', 'update')) || (float) DOL_VERSION < 17) {
-	if (!getDolGlobalInt('MAIN_MODULE_INFRASPACKPLUS')) {	// InfraS add
+if(!in_array($action, array('edit', 'update'))) {
+	if (!getDolGlobalInt('MAIN_MODULE_INFRASPACKPLUS')) {    // InfraS add
 		$formSetup->newItem('SubtotalExperimentalZone')->setAsTitle();
 
 
@@ -370,13 +375,17 @@ if(!in_array($action, array('edit', 'update')) || (float) DOL_VERSION < 17) {
 		$item->setAsYesNo();
 		$item->nameText = $langs->trans("SUBTOTAL_REPLACE_WITH_VAT_IF_HIDE_INNERLINES", $langs->transnoentitiesnoconv('HideInnerLines'));
 
-		// Activer la génération du récapitulatif sur les propositions commerciales
-		$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();
-	}
+	// Activer la génération du récapitulatif sur les propositions commerciales	// InfraS change (moved from line 313)
+	//$formSetup->newItem('SUBTOTAL_PROPAL_ADD_RECAP')->setAsYesNo();	// InfraS change (moved from line 314)
+	}	// InfraS add
 }
 
-
-
+// InfraS add begin
+if (isModEnabled('oblyon') && !empty(getDolGlobalString('MAIN_MENU_INVERT')) && !empty(getDolGlobalString('OBLYON_HIDE_LEFTMENU')) ) {
+	// Désactiver le sommaire rapide
+	dolibarr_set_const($db, 'SUBTOTAL_DISABLE_SUMMARY', 1, 'chaine', 0, '', $conf->entity);
+}
+// InfraS add end
 
 /*
  * Actions

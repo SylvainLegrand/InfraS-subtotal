@@ -108,6 +108,8 @@ SUBTOTAL_SHIPPABLE_ORDER = Paramétrage de l'option gestion des lignes du module
 CloneLSubtotalBlock = Cloner le bloc titre/sous-total
 
 NO_TITLE_SHOW_ON_EXPED_GENERATION=Ne pas reporter les lignes de titre lors de la génération d’expédition
+SUBTOTAL_SHOW_TVA_ON_SUBTOTAL_LINES_ON_ELEMENTS=Afficher le taux de TVA avec les sous-totaux si toutes les lignes du bloc ont un taux identique
+SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS= Limiter l'affichage du taux de TVA aux blocs imprimées en condensé ou en liste.
 Error_subtotal_delete_line=Erreur lors de la suppression d'une ligne du module sous total
 ErrorLoadingLinesFromLinkedOrder=Erreur lors du chargement des lignes de commande associées à l'expedition
 ErrorLoadingLinkedOrder=Erreur lors du chargement de la commande associées à l'expedition

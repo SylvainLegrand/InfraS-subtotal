@@ -1,9 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Non Distribué]
+# [Unreleased]
+- NEW : COMPAT 22 - *17/07/2025* - 3.29.0
+
+## Release 3.29
+- NEW : - Created conf SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS to Limit the display of the VAT rate to blocks printed in condensed or list format - *17/07/2025* - 3.28.4
 
 ## Release 3.28
+- FIX : remove warning - *27/05/2025* - 3.28.4  
 - FIX : DA026337 - Fix buttons on supplier object - *02/04/2025* - 3.28.3
 - FIX : DA026204 - Hide the price of set items option was not correctly applied during PDF generation - *10/03/2025* - 3.28.2
 - FIX : DA026083 - Display details if not in a subtotal bloc - *21/02/2025* - 3.28.1
@@ -22,6 +27,8 @@ All notable changes to this project will be documented in this file.
 - Fix ecrasement de la global $object
 
 # Release 3.25 - 24/07/2024
+- FIX : null-coalesce (potential fatal in trigger) + restore useful comment - *2025-03-26* - 3.25.7
+- FIX : DA025895 Refactored SHIPPING_CREATE trigger - *2025-03-26* - 3.25.6
 - FIX: DA025864: conf `NO_TITLE_SHOW_ON_EXPED_GENERATION` should delete all
   title/free/subtotal lines from the shipment but doesn't - *12/12/2024* - 3.25.5
 - FIX : DA025861 Provide an option in the heading style configuration to have no styling at all - *12/12/2024* - 3.25.4
@@ -33,6 +40,7 @@ All notable changes to this project will be documented in this file.
 - Ajout du hook pdfgeneration dans la liste des hooks accepté par le module - *12/07/2024* - 3.25.0
 
 # Release 3.24 - 08/04/2024
+- FIX : Backward compatibility with Dolibarr 15 and 16 for supplier orders: some parameters were passed to `CommandeFournisseur::addline()` but they were introduced in v16 and v17 respectively. - *09/07/2025* - 3.24.8
 - FIX : Global $object variable was being reassigned causing CRON job crashes (and possibly more) - *18/04/2024* - 3.24.7
 - FIX : Retour montée de version   - *27/09/2024* - 3.24.6
 - FIX : DA024845 : Le module sous total amène des erreurs dans les sauts de page lorsque l'on arrive tout juste en bas de page. - *24/07/2024* - 3.24.5
@@ -43,7 +51,7 @@ All notable changes to this project will be documented in this file.
 - NEW : Ajout des quantités par sous totaux sur l'interface - *27/03/2024* - 3.24.0
 
 # Release 3.23 - 18/12/2023
-
+- FIX : Dans le dictionnaire "Ligne de texte prédéfini" du module Sous total, si je tente d'éditer le contenu d'un texte, cela s'affiche en code HTML au lieu d'un champ d'édition WYSIWYG  - *27/09/2024* - 3.23.11
 - FIX : DA024939 - Added static method hasBreakPage to check if a line has a break page or not - *17/05/2024* - 3.23.10
 - FIX : DA024587 - Les totaux remisés sur le PDF Sponge sont erronés  - *20/03/2024* - 3.23.9
 - FIX : Suite a l'issue #379, la création de facture d'acompte avec un montant variable change les qté des lignes générées par le module donc on utilise un trigger pour remettre les bonnes qtés - *18/03/2024* - 3.23.8
@@ -152,7 +160,8 @@ All notable changes to this project will be documented in this file.
   Les options sur les sous-totaux ont été mises sur les lignes de sous-totaux pour simplification du code et éviter de parcourir toutes les lignes afin de retrouver le titre parent.
 - NEW : Can select sub-total lines in supplier order and invoice  *10/12/2021* - 3.8.0 [PR #226 OpenDsi](https://github.com/ATM-Consulting/dolibarr_module_subtotal/pull/226)
 
-## Release 3.7
+## Version 3.7
+- FIX : Missing CKEditor parameters allowing to browse URL *07/04/2025* - 3.7.6
 - FIX : typo dans hook ODTSubstitutionLine *30/10/2023* - 3.7.5
 - FIX : object was never fetch *07/02/2022* - 3.7.4
 - FIX : Fix compatibility 11.0 pdfEvolution *19/01/2022* - 3.7.3

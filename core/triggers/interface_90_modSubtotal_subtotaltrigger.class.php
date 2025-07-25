@@ -260,27 +260,47 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 
         if (getDolGlobalString('SUBTOTAL_ALLOW_ADD_LINE_UNDER_TITLE') && in_array($action, array('LINEPROPAL_INSERT', 'LINEORDER_INSERT', 'LINEBILL_INSERT')))
 		{
-			$rang = GETPOST('under_title', 'int'); // Rang du titre
-			if ($rang > 0)
-			{
+			$id = GETPOST('under_title', 'int'); // InfraS change: Id du titre
+			if ($id > 0) {	// InfraS change
 				switch ($action) {
 					case 'LINEPROPAL_INSERT':
-						$parent = new Propal($this->db);
+						$parent  = new Propal($this->db);
 						$parent->fetch($object->fk_propal);
+                        // InfraS add begin
+                        $lineobj = new PropaleLigne($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
 					case 'LINEORDER_INSERT':
 						$parent = new Commande($this->db);
 						$parent->fetch($object->fk_commande);
+                        // InfraS add begin
+                        $lineobj = new OrderLine($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
 					case 'LINEBILL_INSERT':
 						$parent = new Facture($this->db);
 						$parent->fetch($object->fk_facture);
+                        // InfraS add begin
+                        $lineobj = new FactureLigne($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 						break;
                     case 'LINEBILL_SUPPLIER_CREATE':
                         $parent = new FactureFournisseur($this->db);
                         $parent->fetch($object->fk_facture_fourn);
+                        // InfraS add begin
+                        $lineobj = new SupplierInvoiceLine($this->db);
+                        $lineobj->fetch($id);
+                        $rang    = $lineobj->rang;
+                        // InfraS add end
 					default:
 						$parent = $object;
+                        $rang   = null;	// InfraS add
 						break;
 				}
 
@@ -377,7 +397,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 
 		}
 
-		if ($action == 'LINEBILL_UPDATE' || $action == 'LINEBILL_MODIFY')
+		if ($action == 'LINEBILL_UPDATE' || $action == 'LINEBILL_MODIFY')	// InfraS change
 		{
 			if (GETPOST('all_progress', 'none') && TSubtotal::isModSubtotalLine($object))
 			{
@@ -460,13 +480,23 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 			// on recupere la commande
 			$object->fetchObjectLinked();
 
-			// TODO: pas le temps maintenant dans le cadre du ticket DA025864, mais il faut absolument refacto
-			//       ce trigger-là.
-			//       1) on fait 2 fois le foreach, une fois pour la conf NO_TITLE_SHOW_ON_EXPED_GENERATION, une
-			//          autre fois pour supprimer les blocs sans ligne de produit.
-			//       2) on re-fetche la même commande X fois (pour chaque ligne).
-			//       3) je ne comprends pas à quoi sert le bloc à la fin du premier foreach, mais qui s'exécute
-			//          même quand la conf NO_TITLE_SHOW_ON_EXPED_GENERATION est désactivée.
+			// Fetch the linked order once
+			$cmd = null;
+			if (count($object->linkedObjectsIds['commande'] ?? []) === 1) {
+				$cmd = new Commande($this->db);
+				$res = $cmd->fetch(current($object->linkedObjectsIds['commande']));
+				if ($res <= 0) {
+					setEventMessage($langs->trans('ErrorLoadingLinkedOrder'), 'errors');
+				} else {
+					$resLines = $cmd->fetch_lines();
+					if ($resLines <= 0) {
+						setEventMessage($langs->trans('ErrorLoadingLinesFromLinkedOrder'), 'errors');
+					}
+				}
+			}
+
+			$linesToDelete = [];
+
 			foreach ($object->lines as &$line) {
 				$orderline = new OrderLine($this->db);
 				$orderline->fetch($line->origin_line_id);
@@ -474,31 +504,13 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 				if (getDolGlobalString('NO_TITLE_SHOW_ON_EXPED_GENERATION')) {
 					// conf "Ne pas reporter les lignes de titre lors de la génération d’expédition"
 					// => suppression des lignes qui correspondent à un titre ou sous-total
-
 					// comme les lignes d'expédition n'ont pas d'attribut `special_code`, on doit le
 					// récupérer depuis les lignes de la commande.
-					// @todo voir plus tard pourquoi nous n'avons pas cette information dans la ligne d'expedition
-					if (! isset($line->special_code)) {
-						//  récuperation  de la commande generée par Trigger
-						if (count($object->linkedObjectsIds['commande']) == 1) {
-							$cmd = new Commande($this->db);
-							$res = $cmd->fetch(current($object->linkedObjectsIds['commande']));
-							if ($res > 0) {
-								$resLines = $cmd->fetch_lines();
-								if ($resLines > 0) {
-									foreach ($cmd->lines as $cmdLine) {
-										if ($cmdLine->id == $line->origin_line_id) {
-											$line->special_code = $cmdLine->special_code;
-											break;
-										}
-									}
-								} else {
-									//error
-									setEventMessage($langs->trans("ErrorLoadingLinesFromLinkedOrder"), 'errors');
-								}
-							} else {
-								//error
-								setEventMessage($langs->trans("ErrorLoadingLinkedOrder"), 'errors');
+					if (!isset($line->special_code) && $cmd) {
+						foreach ($cmd->lines as $cmdLine) {
+							if ($cmdLine->id == $line->origin_line_id) {
+								$line->special_code = $cmdLine->special_code;
+								break;
 							}
 						}
 					}
@@ -511,31 +523,29 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 					}
 				}
 
-				// TODO: ce `if` est à clarifier, sa pertinence à réévaluer
 				if (TSubtotal::isModSubtotalLine($orderline)) {
-					// Nous sommes sur une ligne titre, si la ligne précédente est un titre de même niveau, on supprime la ligne précédente
 					$line->special_code = TSubtotal::$module_number;
+				}
+
+				if (TSubtotal::isTitle($line)) {
+					$lines = TSubtotal::getLinesFromTitleId($object, $line->id, true);
+					$blocks = [];
+					$isThereProduct = false;
+					foreach ($lines as $lineInBlock) {
+						if (TSubtotal::isModSubtotalLine($lineInBlock)) {
+							$blocks[$lineInBlock->id] = $lineInBlock;
+						} else {
+							$isThereProduct = true;
+						}
+					}
+					if (!$isThereProduct) {
+						$linesToDelete = array_merge($linesToDelete, $blocks);
+					}
 				}
 			}
 
-			// suppression des blocs qui ne contiennent aucune ligne de produit
-			$TLinesToDelete = array();
-			foreach ($object->lines as &$line) {
-				if(TSubtotal::isTitle($line)) {
-					$TLines = TSubtotal::getLinesFromTitleId($object, $line->id, true);
-					$TBlocks = array();
-					$isThereProduct = false;
-					foreach($TLines as $lineInBlock) {
-							if(TSubtotal::isModSubtotalLine($lineInBlock) ) $TBlocks[$lineInBlock->id] = $lineInBlock;
-							else $isThereProduct = true;
-					}
-					if(!$isThereProduct) {
-						$TLinesToDelete = array_merge($TLinesToDelete, $TBlocks);
-					}
-				}
-			}
-			if (!empty($TLinesToDelete)) {
-				foreach ($TLinesToDelete as $lineToDelete) {
+			if (!empty($linesToDelete)) {
+				foreach ($linesToDelete as $lineToDelete) {
 					$lineToDelete->delete($user);
 				}
 			}
