@@ -273,9 +273,7 @@ $extrafields = new ExtraFields($db);
 $extralabels = $extrafields->fetch_name_optionals_label('facturedet');
 $item->setAsMultiSelect($extralabels);
 
-/*
- * Configuration
- */
+
 $formSetup->newItem('Setup')->setAsTitle();
 
 // Activer l'affichage de la somme des quantités sur les lignes de sous-totaux pour les modèles de documents :

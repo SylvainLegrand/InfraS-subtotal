@@ -70,7 +70,7 @@ class modSubtotal extends DolibarrModules
 		// Possible values for version are: 'development', 'experimental' or version
 
 
-		$this->version = '3.29.2';	// InfraS change
+		$this->version = '3.29.3';	// InfraS change
 
 
 		// Url to the file with your last numberversion of this module
@@ -135,6 +135,7 @@ class modSubtotal extends DolibarrModules
 			,'supplierinvoicelist'
 			,'cron'
 			,'pdfgeneration'
+			,'checkmarginlist'
 			),
 			// Set here all workflow context managed by module
 			//'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE')),
