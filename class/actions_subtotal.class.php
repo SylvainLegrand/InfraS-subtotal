@@ -12,7 +12,7 @@ include_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 require_once __DIR__ . '/../backport/v19/core/class/commonhookactions.class.php';
 if (!empty(isModEnabled('ouvrage'))) {
 	dol_include_once('/ouvrage/class/ouvrage.class.php');	// InfraS add
-	dol_include_once('/ouvrage/modules/modOuvrage.class.php');	// Easya add
+	dol_include_once('/ouvrage/core/modules/modouvrage.class.php');	// Easya add
 }
 
 class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
