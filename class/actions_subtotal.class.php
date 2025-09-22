@@ -3881,6 +3881,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$object->tpl['subtotal'] = $line->id;
 				if (TSubtotal::isTitle($line)) $object->tpl['sub-type'] = 'title';
 				else if (TSubtotal::isSubtotal($line)) $object->tpl['sub-type'] = 'total';
+				else if (TSubtotal::isFreeText($line)) $object->tpl['sub-type'] = 'freetext';
 
 				$object->tpl['sub-tr-style'] = '';
 				if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
@@ -3933,7 +3934,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 				if (empty($line->label)) {
 					if ($line->qty >= 91 && $line->qty <= 99 && getDolGlobalString('CONCAT_TITLE_LABEL_IN_SUBTOTAL_LABEL')) $object->tpl["sublabel"].=  $line->description.' '.$this->getTitle($object, $line);
-					else $object->tpl["sublabel"].=  $line->description;
+					else $object->tpl["sublabel"] = ($object->tpl["sublabel"] ?? '') . $line->description;
 				}
 				else {
 
@@ -4983,5 +4984,21 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				<?php
 			}
         return 0;
+	}
+
+	/**
+	 * @param $parameters
+	 * @param $object
+	 * @param $action
+	 * @return int
+	 */
+	public function printFieldListWhere(&$parameters, &$object, &$action, $hookmanager)
+	{
+
+		$contexts = explode(':',$parameters['context']);
+		if (in_array('checkmarginlist', $contexts)){
+			$this->resprints = " AND  d.special_code != 104777";
+		}
+		return 0; // succès
 	}
 }

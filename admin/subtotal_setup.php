@@ -241,7 +241,7 @@ if(!in_array($action, array('edit', 'update'))) {
 	$item->helpText = $langs->transnoentities('SUBTOTAL_NONCOMPRIS_UPDATE_PA_HT_info');
 }	// InfraS add
 }	// InfraS add
-if(!in_array($action, array('edit', 'update')) || (float)DOL_VERSION < 17) {	// InfraS add
+if(!in_array($action, array('edit', 'update'))) {	// InfraS add
 	// Ajouter un titre, ajoutera au-dessus les sous-totaux manquants
 	$formSetup->newItem('SUBTOTAL_AUTO_ADD_SUBTOTAL_ON_ADDING_NEW_TITLE')->setAsYesNo();
 }
@@ -273,9 +273,7 @@ $extrafields = new ExtraFields($db);
 $extralabels = $extrafields->fetch_name_optionals_label('facturedet');
 $item->setAsMultiSelect($extralabels);
 
-/*
- * Configuration
- */
+
 $formSetup->newItem('Setup')->setAsTitle();
 
 // Activer l'affichage de la somme des quantités sur les lignes de sous-totaux pour les modèles de documents :

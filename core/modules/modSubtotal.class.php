@@ -68,9 +68,7 @@ class modSubtotal extends DolibarrModules
 		// (where XXX is value of numeric property 'numero' of module)
 		$this->description = "Module permettant d'ajouter des titres, sous-totaux et des sous-totaux intermédiaires dans un tableau ou une liste, tout en facilitant le déplacement fluide d'une ligne d'éléments d'un sous-total à un autre.";
 		// Possible values for version are: 'development', 'experimental' or version
-
-
-		$this->version = '3.29.2';	// InfraS change
+		$this->version = '3.29.5';	// InfraS change
 
 
 		// Url to the file with your last numberversion of this module
@@ -135,6 +133,7 @@ class modSubtotal extends DolibarrModules
 			,'supplierinvoicelist'
 			,'cron'
 			,'pdfgeneration'
+			,'checkmarginlist'
 			),
 			// Set here all workflow context managed by module
 			//'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE')),
