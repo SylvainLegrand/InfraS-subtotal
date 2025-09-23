@@ -3830,13 +3830,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 				{
 					// InfraS change begin
-					if($line->qty==99) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf').';';          // Sub-total level 1
-					else if($line->qty==98) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#ddddff').';';    // Sub-total level 2
-					else if($line->qty<=97 && $line->qty>=91) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#eeeeff').';';  // Sub-total level 3 to 9
-					else if($line->qty==1) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf').';';     // Title level 1
-					else if($line->qty==2) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#ddddff').';';     // Title level 2
-					else if($line->qty==50) print '';                       // Free text
-					else print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#eeeeff').';';                       // Title level 3 to 9
+					if($line->qty==99) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf').';';          // Sub-total level 1
+					else if($line->qty==98) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#ddddff').';';    // Sub-total level 2
+					else if($line->qty<=97 && $line->qty>=91) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#eeeeff').';';  // Sub-total level 3 to 9
+					else if($line->qty==1) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf').';';     // Title level 1
+					else if($line->qty==2) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#ddddff').';';     // Title level 2
+					else if($line->qty==50) $object->tpl['sub-tr-style'] .= '';                       // Free text
+					else $object->tpl['sub-tr-style'] .=  'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#eeeeff').';';                       // Title level 3 to 9
 
 					// InfraS change end
 				}
