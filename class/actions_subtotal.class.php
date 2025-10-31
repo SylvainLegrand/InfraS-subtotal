@@ -76,42 +76,41 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	}
 
 
+
 	function editDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
 	{
 		global $conf;
 
 		$dictionnariesTablePrefix = '';
-		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
+		if (intval(DOL_VERSION) < 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
 
-		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
-		{
-            $value = TSubtotal::getHtmlDictionnary();
-
+		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text') {
+			$value = TSubtotal::getHtmlDictionnary();
 
 			?>
 			<script type="text/javascript">
 				$(function() {
-						if ($('input[name=content]').length > 0)
-						{
-							$('input[name=content]').each(function(i, item) {
-								var value = '';
-								// Le dernier item correspond à l'édition
-								if (i == $('input[name=content]').length - 1) {
-									value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-								}
-								$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
-							});
+					let inputs = $('input[name=content]');
 
-							<?php if (isModEnabled('fckeditor') && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
-							$('textarea[name=content]').each(function(i, item) {
-								CKEDITOR.replace(item, {
-									toolbar: 'dolibarr_notes',
-									customConfig: ckeditorConfig,
-									versionCheck: false
-								});
-								});
-								<?php } ?>
+					if (inputs.length > 0) {
+						inputs.each(function(i, item) {
+							// Le dernier item correspond à l'édition
+							if (i == (inputs.length - 1)) {
+								var value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+								$(item).replaceWith($('<textarea name="content" id="content' + i + '">'+value+'</textarea>'));
 							}
+						});
+
+						<?php if (isModEnabled('fckeditor') && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
+						$('textarea[name=content]').each(function(i, item) {
+							CKEDITOR.replace(item, {
+								toolbar: 'dolibarr_notes',
+								customConfig: ckeditorConfig,
+								versionCheck: false
+							});
+						});
+						<?php } ?>
+					}
 				});
 			</script>
 			<?php
@@ -119,6 +118,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 		return 0;
 	}
+
 	function createDictionaryFieldlist($parameters, &$object, &$action, $hookmanager)
 	{
 		global $conf, $langs;	// InfraS change
@@ -126,8 +126,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		$dictionnariesTablePrefix = '';
 		if (intval(DOL_VERSION)< 16) $dictionnariesTablePrefix =  MAIN_DB_PREFIX;
 
-		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text')
-		{
+		if ($parameters['tabname'] == $dictionnariesTablePrefix.'c_subtotal_free_text') {
 			// Editor wysiwyg	// InfraS add begin
 			$toolbarname = 'dolibarr_notes';
 			$disallowAnyContent = true;
@@ -148,20 +147,20 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$editor_height = empty($conf->global->MAIN_DOLEDITOR_HEIGHT) ? 100 : $conf->global->MAIN_DOLEDITOR_HEIGHT;
 			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
 			// InfraS add end
-            $value = TSubtotal::getHtmlDictionnary();
+			$value = GETPOST('content', 'restricthtml');
 
 			?>
 			<script type="text/javascript">
 				$(function() {
-					if ($('input[name=content]').length > 0)
-					{
-						$('input[name=content]').each(function(i, item) {
-							var value = '';
-							// Le dernier item correspond à l'édition
-							if (i == $('input[name=content]').length - 1) {
-								value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+					let inputs = $('input[name=content]');
+
+					if (inputs.length > 0) {
+						inputs.each(function(i, item) {
+							// Le premier item correspond à la création
+							if (i == 0) {
+								var value = <?php echo json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+								$(item).replaceWith($('<textarea name="content" id="content' + i + '">'+value+'</textarea>'));
 							}
-							$(item).replaceWith($('<textarea name="content">'+value+'</textarea>'));
 						});
 
 						<?php if (isModEnabled("fckeditor") && getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
