@@ -147,7 +147,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$editor_height = empty($conf->global->MAIN_DOLEDITOR_HEIGHT) ? 100 : $conf->global->MAIN_DOLEDITOR_HEIGHT;
 			$editor_allowContent = $disallowAnyContent ? 'false' : 'true';
 			// InfraS add end
-			$value = GETPOST('content', 'restricthtml');
+			$value = GETPOSTISSET('actioncancel') || GETPOSTISSET('actionmodify') ? '' : GETPOST('content', 'restricthtml');
 
 			?>
 			<script type="text/javascript">
