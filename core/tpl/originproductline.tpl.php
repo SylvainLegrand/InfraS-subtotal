@@ -32,7 +32,7 @@ $coreTplRow = ob_get_clean();
 // If this is a subtotal line: we don't print the row from the core tpl: we override it completely because we don't want
 // to show qty etc.
 if ($this->tpl['subtotal'] ?? '' == $this->tpl['id'] && in_array($this->tpl['sub-type'] ?? '', array('title', 'total', 'freetext'))) {
-	print '<tr class="oddeven'.(empty($this->tpl['strike']) ? '' : ' strikefordisabled').'" '.(! empty($this->tpl['sub-tr-style']) ? 'style="'.$this->tpl['sub-tr-style'].'"' : '').'>';
+	print '<tr class="oddeven'.(empty($this->tpl['strike']) ? '' : ' strikefordisabled').(! empty($this->tpl['sub-tr-class']) ? ' '.$this->tpl['sub-tr-class'] : '').'" '.(! empty($this->tpl['sub-tr-style']) ? 'style="'.$this->tpl['sub-tr-style'].'"' : '').'>';	// InfraS change
 
 	// We only use the overridden HTML to compute the colspan, but we don't print it
 	$colspan = 1; // default

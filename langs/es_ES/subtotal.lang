@@ -110,8 +110,10 @@ ErrorLoadingLinesFromLinkedOrder=Error cargando líneas de pedido asociadas con 
 ErrorLoadingLinkedOrder=Error cargando el pedido asociado al envío
 ErrorNoLinkedOrder=Ningún comando asociado
 
-SUBTOTAL_TITLE_BACKGROUNDCOLOR = Color de fondo para los campos de título en PDF
-SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR = Color de fondo para los campos de subtotal en PDF
+SUBTOTAL_TITLE_BACKGROUNDCOLOR = Color de fondo para los campos de título
+SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR = Color de fondo para los campos de subtotal
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE = Porcentaje de reducción de brillo entre cada nivel de títulos/subtítulos/subtotales
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE_info = los colores elegidos arriba serán los del nivel 1 y los niveles inferiores serán más claros dependiendo de este porcentaje (nivel 1 = color elegido, nivel 2 = color elegido - porcentaje, nivel 3 = color elegido - 2*porcentaje, etc.)
 SUBTOTAL_USE_NEW_FORMAT_HELP = Activando esta opción, aparecerán nuevas funcionalidades y comportamientos.<br/>Entre las nuevas opciones : <ul><li>Agrega el concepto en el título de subtotal</li></ul>
 SUBTOTAL_LIST_OF_EXTRAFIELDS_PROPALDET = Campos adicionales disponibles en los títulos de presupuestos a clientes
 SUBTOTAL_LIST_OF_EXTRAFIELDS_COMMANDEDET = Campos adicionales disponibles en los títulos de pedidos de clientes
