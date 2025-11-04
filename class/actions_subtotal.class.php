@@ -2959,29 +2959,32 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
             $data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
             // Prepare CSS class
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 			?>
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
 			<tr class="oddeven <?php echo $class; ?>" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3530,15 +3533,19 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// HTML 5 data for js
 			$data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 ?>
 
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
@@ -3546,14 +3553,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3660,29 +3666,32 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// HTML 5 data for js
 			$data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal ';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 			?>
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
 			<tr class="oddeven" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3828,17 +3837,33 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				else if (TSubtotal::isFreeText($line)) $object->tpl['sub-type'] = 'freetext';
 
 				$object->tpl['sub-tr-style'] = '';
+				// Prepare CSS class
+				// InfraS add begin
+					$object->tpl['sub-tr-class'] = '';
+            	if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+					$object->tpl['sub-tr-class']	.= ' newSubtotal';
+				}
+            	if ($line->qty > 0 && $line->qty < 10) {
+					$object->tpl['sub-tr-class']	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+				} elseif ($line->qty > 90 && $line->qty < 100) {
+					$object->tpl['sub-tr-class']	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+				} elseif ($line->qty == 50) {
+					$object->tpl['sub-tr-class']	.= ' subtotalText';	// Free text
+				}
+				// InfraS add end
 				if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 				{
 					// InfraS change begin
-					if($line->qty==99) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf').';';          // Sub-total level 1
-					else if($line->qty==98) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#ddddff').';';    // Sub-total level 2
-					else if($line->qty<=97 && $line->qty>=91) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#eeeeff').';';  // Sub-total level 3 to 9
-					else if($line->qty==1) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf').';';     // Title level 1
-					else if($line->qty==2) $object->tpl['sub-tr-style'] .= 'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#ddddff').';';     // Title level 2
-					else if($line->qty==50) $object->tpl['sub-tr-style'] .= '';                       // Free text
-					else $object->tpl['sub-tr-style'] .=  'background:' . getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#eeeeff').';';                       // Title level 3 to 9
-
+					$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
+					if ($line->qty <= 99 && $line->qty >= 91) {
+						$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+						$object->tpl['sub-tr-style']	= 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
+					} elseif ($line->qty >= 1 && $line->qty <= 9) {
+						$titleBackgroundColor	= getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+						$object->tpl['sub-tr-style'] = 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
+					} elseif ($line->qty == 50) {	// Free text
+						$object->tpl['sub-tr-style']	= '';
+					}
 					// InfraS change end
 				}
 				else

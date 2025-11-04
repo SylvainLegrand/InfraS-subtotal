@@ -115,8 +115,10 @@ ErrorLoadingLinesFromLinkedOrder=Erreur lors du chargement des lignes de command
 ErrorLoadingLinkedOrder=Erreur lors du chargement de la commande associées à l'expedition
 ErrorNoLinkedOrder=pas de commande associée
 
-SUBTOTAL_TITLE_BACKGROUNDCOLOR = Couleur de fond utilisée sur les PDF pour les titres
-SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR = Couleur de fond utilisée sur les PDF pour les sous-totaux
+SUBTOTAL_TITLE_BACKGROUNDCOLOR = Couleur de fond utilisée pour les titres
+SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR = Couleur de fond utilisée pour les sous-totaux
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE = Pourcentage de réduction de la luminosité entre chaque niveau de titres / sous-titres / sous-totaux
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE_info = les couleurs choisies ci-dessus seront celles du niveau 1 et les niveaux inférieurs seront plus clairs en fonction de ce pourcentage (niveau 1 = couleur choisie, niveau 2 = couleur choisie - pourcentage, niveau 3 = couleur choisie - 2*pourcentage, etc.)
 SUBTOTAL_USE_NEW_FORMAT_HELP = En activant cette option, de nouvelles fonctionnalités et comportements apparaissent.<br/>Parmi les nouveaux comportement : <ul><li>Ajoute la notion de niveau de titre et de sous total</li></ul>
 SUBTOTAL_LIST_OF_EXTRAFIELDS_PROPALDET = Champs complémentaires disponible sur les titres dans les propositions commerciales clients
 SUBTOTAL_LIST_OF_EXTRAFIELDS_COMMANDEDET = Champs complémentaires disponible sur les titres dans les commandes clients

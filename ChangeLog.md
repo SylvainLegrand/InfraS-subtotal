@@ -2,10 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 # [Unreleased]
-- NEW : COMPAT 22 - *17/07/2025* - 3.29.3
-
 ## Release 3.29
 - NEW : - Created conf SUBTOTAL_LIMIT_TVA_ON_CONDENSED_BLOCS to Limit the display of the VAT rate to blocks printed in condensed or list format - *17/07/2025* - 3.28.4
+- FIX : query sql to order line when create invoice from order  - *29/10/2025* - 3.29.1
+- NEW : COMPAT 22 - *02/07/2025* - 3.29.0
 
 ## Release 3.28
 - FIX : Prevent creating a new situation invoice when all lines have 100% progress- *01/10/2025* - 3.29.1
