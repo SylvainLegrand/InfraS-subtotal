@@ -2883,13 +2883,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		}
 		elseif($object->element == 'shipping' || $object->element == 'delivery')
 		{
-			if(empty($line->origin_line_id) && (! empty($line->fk_elementdet || ! empty($line->fk_elementdet))))
+			if(empty($line->origin_line_id) && ! empty($line->fk_elementdet ))	// InfraS change
 			{
 				$line->origin_line_id = $line->fk_elementdet ?? $line->fk_elementdet;
 			}
 
 			$originline = new OrderLine($db);
-			$originline->fetch($line->fk_elementdet ?? $line->fk_elementdet);
+			$originline->fetch($line->origin_line_id ?? $line->origin_line_id);	// InfraS change
 
 			foreach(get_object_vars($line) as $property => $value)
 			{
@@ -3424,10 +3424,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			}
 
 			if ($num > 1 && empty($conf->browser->phone)) { ?>
-			<td align="center" class="linecolmove tdlineupdown">
+			<td class="center linecolmove tdlineupdown">	<!-- InfraS change -->
 			</td>
 			<?php } else { ?>
-			<td align="center"<?php echo ((empty($conf->browser->phone) && ($object->statut == 0  && $createRight ))?' class="tdlineupdown"':''); ?>></td>
+			<td <?php echo ((empty($conf->browser->phone) && ($object->statut == 0  && $createRight ))?' class="center tdlineupdown"':' class="center"'); ?>></td>	<!-- InfraS change -->
 			<?php } ?>
 
 
