@@ -1085,10 +1085,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	 * @return array|float|int
 	 */
 	function getTotalLineFromObject(&$object, &$line, $use_level=false, $return_all=0) {
-		global $conf, $db;	// InfraS change
-
 		$rang = $line->rang;
-		$qty_line = $line->qty;
 		$lvl = 0;
         if (TSubtotal::isSubtotal($line)) $lvl = TSubtotal::getNiveau($line);
 
@@ -1103,12 +1100,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		$multicurrency_total_ht = 0;	// InfraS add
 		$multicurrency_total_ttc = 0;	// InfraS add
 
-
 		$sign=1;
 		if (isset($object->type) && $object->type == 2 && getDolGlobalString('INVOICE_POSITIVE_CREDIT_NOTE')) $sign=-1;
-
-		if (GETPOST('action', 'none') == 'builddoc') $builddoc = true;
-		else $builddoc = false;
 
 		dol_include_once('/subtotal/class/subtotal.class.php');
 
@@ -1117,7 +1110,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		// InfraS add begin
 		$listOuvrages	= array();
 		if (!empty(isModEnabled('ouvrage'))) {
-			// first loop to record all ouvrages
+		// loop over the lines above the current total line
 			foreach($TLineReverse as $l) {
 				$isOuvrage	= Ouvrage::isOuvrage($l) ? 1 : 0;	// ouvrage ??
 				if (!empty($title_break) && $title_break->id == $l->id) break;	// We go back from the end to the beginning, so when we find the associated title we stop
@@ -1127,7 +1120,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			}
 		}
 		// InfraS add end
-
 		foreach($TLineReverse as $l)
 		{
 			$l->total_ttc = doubleval($l->total_ttc);
@@ -1136,74 +1128,80 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$l->multicurrency_total_ttc = doubleval($l->multicurrency_total_ttc);	// InfraS add
 			$isOuvrage	= !empty(isModEnabled('ouvrage')) && Ouvrage::isOuvrage($l) ? 1 : 0;	// InfraS add
 
-			//print $l->rang.'>='.$rang.' '.$total.'<br/>';
             if ($l->rang>=$rang) continue;
             if (!empty($title_break) && $title_break->id == $l->id) break;
             elseif (!TSubtotal::isModSubtotalLine($l) && empty($isOuvrage))	// InfraS change
             {
-				$totalQty	= !empty($listOuvrages) && !empty($l->fk_parent_line) && array_key_exists($l->fk_parent_line, $listOuvrages) ? $listOuvrages[$l->fk_parent_line] : 1;	// InfraS change
+				$totalQty	= !empty($listOuvrages) && !empty($l->fk_parent_line) && array_key_exists($l->fk_parent_line, $listOuvrages) ? $listOuvrages[$l->fk_parent_line] : 1;	// InfraS add
 				$total_qty += $l->qty;
-               // TODO retirer le test avec $builddoc quand Dolibarr affichera le total progression sur la card et pas seulement dans le PDF
-                if ($builddoc && $object->element == 'facture' && $object->type==Facture::TYPE_SITUATION)
+                if ($object->element == 'facture' && $object->type==Facture::TYPE_SITUATION)
                 {
-					$sitFacTotLineAvt	= isset($conf->global->INFRASPLUS_PDF_SITFAC_TOTLINE_AVT) ? $conf->global->INFRASPLUS_PDF_SITFAC_TOTLINE_AVT : 0;	// InfraS add
+					$sitFacTotLineAvt	= getDolGlobalInt('INFRASPLUS_PDF_SITFAC_TOTLINE_AVT', 0);	// InfraS add
+					// 1 = (legacy mode): situation_percent is cumulative (state at situation)
+					// 2 = (new mode): situation_percent is non-cumulative (delta of current situation)
+					$isCumulative = getDolGlobalInt('INVOICE_USE_SITUATION') === 1;
+
                     if ($l->situation_percent > 0 && !empty($l->total_ht) && empty($sitFacTotLineAvt))	// InfraS change
                     {
-                        $prev_progress = 0;
-                        $progress = 1;
-                        if (method_exists($l, 'get_prev_progress'))
-                        {
-                            $prev_progress = $l->get_prev_progress($object->id);
-                            $progress = ($l->situation_percent - $prev_progress) / 100;
-                        }
+                        $prev_progress = method_exists($l, 'get_prev_progress') ? $l->get_prev_progress($object->id) : 0;
 
-                        $result = ($sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        $total+= $result;
-                        // TODO check si les 3 lignes du dessous sont corrects
-                        if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-                        if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-						if ($l->multicurrency_total_ht != 0)	$multicurrency_total_ht += ($sign * ($l->multicurrency_total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
-						if ($l->multicurrency_total_ttc != 0)	$multicurrency_total_ttc += ($sign * ($l->multicurrency_total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
-                    }
-					else {	// InfraS add begin
-						if ($l->product_type != 9) {
-										$total += $l->total_ht * $totalQty;
-										$total_tva += $l->total_tva * $totalQty;
-										$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
-										$total_ttc += $l->total_ttc * $totalQty;
-										$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
-										$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
+						if ($isCumulative) {
+							// legacy mode: $l->situation_percent = cumulative progress within the cycle
+							$progressState = $l->situation_percent;
+							$progressDelta = $progressState - $prev_progress;
+							$progressRatio = $progressDelta / $progressState;
+							$lineTotalHT = $sign * $l->total_ht * $progressRatio;
+							$lineTotalTVA = $sign * $l->total_tva * $progressRatio;
+							$lineTotalTTC = $sign * $l->total_ttc * $progressRatio;
+							$lineMulticurrencyTotalHT = $sign * $l->multicurrency_total_ht * $progressRatio;	// InfraS add
+							$lineMulticurrencyTotalTTC = $sign * $l->multicurrency_total_ttc * $progressRatio;	// InfraS add
+						} else {
+							// new mode: $l->situation_percent = progress delta of this situation invoice
+							// the delta (=non-cumulative) values are stored directly on the line
+							$lineTotalHT = $l->total_ht;
+							$lineTotalTVA = $l->total_tva;
+							$lineTotalTTC = $l->total_ttc;
+							$lineMulticurrencyTotalHT = $l->multicurrency_total_ht;	// InfraS add
+							$lineMulticurrencyTotalTTC = $l->multicurrency_total_ttc;	// InfraS add
 						}
+                        $total += $lineTotalHT;
+						$total_tva += $lineTotalTVA;
+						$total_ttc += $lineTotalTTC;
+						$TTotal_tva[$l->tva_tx] += $lineTotalTVA;
+						$multicurrency_total_ht += $lineMulticurrencyTotalHT;	// InfraS add
+						$multicurrency_total_ttc += $lineMulticurrencyTotalTTC;	// InfraS add
+                    } elseif ($l->product_type != 9) {	// InfraS add begin
+						$total += $l->total_ht * $totalQty;
+						$total_tva += $l->total_tva * $totalQty;
+						$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
+						$total_ttc += $l->total_ttc * $totalQty;
+						$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
+						$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
 					}
 					// InfraS add end
-                }
-                else
-                {
-					if ($l->product_type != 9) {
-									$total += $l->total_ht * $totalQty;	// InfraS change
-									$total_tva += $l->total_tva * $totalQty;	// InfraS change
-									$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
+                } elseif ($l->product_type != 9) {
+					$total += $l->total_ht * $totalQty;	// InfraS change
+					$total_tva += $l->total_tva * $totalQty;	// InfraS change
+					$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
 
-									if(! isset($TTotal_tva[$l->tva_tx])) {
-										$TTotal_tva[$l->tva_tx] = 0;
-									}
-									$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
-
-									$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
-									$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
-									// InfraS add begin
-									$vatrate = (string) $l->tva_tx;
-									if (($l->info_bits & 0x01) == 0x01) {
-										$vatrate .= '*';
-									}
-									$vatcode = $l->vat_src_code;
-									if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
-										$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
-									}
-									$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
-									// InfraS add end
+					if (! isset($TTotal_tva[$l->tva_tx])) {
+						$TTotal_tva[$l->tva_tx] = 0;
 					}
+					$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
+
+					$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+					$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
+					// InfraS add begin
+					$vatrate = (string) $l->tva_tx;
+					if (($l->info_bits & 0x01) == 0x01) {
+						$vatrate .= '*';
+					}
+					$vatcode = $l->vat_src_code;
+					if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
+						$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
+					}
+					$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
+					// InfraS add end
                 }
             }
 		}

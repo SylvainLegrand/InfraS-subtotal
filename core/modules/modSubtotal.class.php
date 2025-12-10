@@ -68,7 +68,7 @@ class modSubtotal extends DolibarrModules
 		// (where XXX is value of numeric property 'numero' of module)
 		$this->description = "Module permettant d'ajouter des titres, sous-totaux et des sous-totaux intermédiaires dans un tableau ou une liste, tout en facilitant le déplacement fluide d'une ligne d'éléments d'un sous-total à un autre.";
 		// Possible values for version are: 'development', 'experimental' or version
-		$this->version = '3.29.1.9';	// InfraS change
+		$this->version = '3.29.2.0';	// InfraS change
 
 
 		// Url to the file with your last numberversion of this module
@@ -270,7 +270,6 @@ class modSubtotal extends DolibarrModules
 		//$r++;
 		// Main menu entries
 		$this->menus = array(); // List of menus to add
-
 	}
 
 	/**
@@ -298,7 +297,7 @@ class modSubtotal extends DolibarrModules
 
 		$extra = new ExtraFields($db); // propaldet, commandedet, facturedet
 		$TElementType = array('propaldet', 'commandedet', 'facturedet', 'supplier_proposaldet', 'commande_fournisseurdet', 'facture_fourn_det');
-		foreach($TElementType as $element_type) {
+		foreach ($TElementType as $element_type) {
 			$extra->addExtraField('show_total_ht', 'Afficher le Total HT sur le sous-total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 			$extra->addExtraField('show_reduc', 'Afficher la réduction sur le sous-total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 			$extra->addExtraField('subtotal_show_qty', 'Afficher la Quantité du Sous-Total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
