@@ -488,7 +488,7 @@ function getTotalLineFromObject(&$object, &$line, $use_level=false, $return_all=
  */
 function getLineCurrentProgress($db, $factureid, $line)
 {
-	$previous_progress = (floatval(DOL_VERSION) >= 22) ? $line->getAllPrevProgress($factureid) : $line->get_prev_progress($factureid);	// InfraS change
+	$previous_progress = (floatval(DOL_VERSION) >= 21) ? $line->getAllPrevProgress($factureid) : $line->get_prev_progress($factureid);	// InfraS change
 	$parent = new Facture($db);
 	$res = $parent->fetch($factureid);
 
