@@ -2990,9 +2990,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			if($object->element == 'invoice_supplier') $colspan = 4;	// InfraS change
 			if($object->element == 'supplier_proposal') $colspan = 3;
 
+			// MODIF BY OPENDSI TO FIX COLUMN PU TTC
 			if (!empty($inputalsopricewithtax) && !getDolGlobalInt('MAIN_NO_INPUT_PRICE_WITH_TAX')) {
 				$colspan++; // Ajout de la colonne PU TTC
 			}
+			// END MODIF BY OPENDSI
+
 
 			if($object->element == 'facturerec' ) $colspan = 5;
 
