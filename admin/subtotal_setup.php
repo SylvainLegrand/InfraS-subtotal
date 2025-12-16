@@ -169,7 +169,7 @@ $item->fieldAttr['placeholder'] = 'BU';
 $item = $formSetup->newItem('SUBTOTAL_TEXT_LINE_STYLE');
 $item->fieldAttr['placeholder'] = '';
 
-// Style des titres (B = gras, U = souligné, I = italique)
+// Taille des titres (égale à 9 si non renseignée)
 $item = $formSetup->newItem('SUBTOTAL_TITLE_SIZE');
 $item->helpText = $langs->transnoentities('SUBTOTAL_TITLE_SIZE_info');
 
@@ -191,6 +191,13 @@ $item = $formSetup->newItem('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR');
 $item->fieldValue = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR','#ebebeb');
 $item->fieldAttr['type'] = 'color';
 $item->fieldOutputOverride ='<input type="color" value="'.$item->fieldValue .'" disabled />';
+
+// InfraS add begin
+// Pourcentage de réduction de la luminosité entre chaque niveau de titres / sous-titres / sous-totaux (les couleurs choisies ci-dessus seront celles du niveau 1 et les niveaux inférieurs seront plus clairs en fonction de ce pourcentage)
+$item = $formSetup->newItem('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE');
+$item->helpText = $langs->transnoentities('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE_info');
+$item->fieldAttr['placeholder'] = '10';
+// InfraS add end
 
 $item = $formSetup->newItem('SUBTOTAL_DISABLE_SUMMARY')->setAsYesNo();
 

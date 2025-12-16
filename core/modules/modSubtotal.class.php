@@ -70,7 +70,6 @@ class modSubtotal extends DolibarrModules
 		// Possible values for version are: 'development', 'experimental' or version
 		$this->version = '3.29.5+0.0.1';	// InfraS change
 
-
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
 		$this->url_last_version	= $this->editor_web.'jdownloads/Technique/Modules%20Dolibarr/Changelogs/'.$this->name.'/'.$this->name.'.txt';
@@ -270,7 +269,6 @@ class modSubtotal extends DolibarrModules
 		//$r++;
 		// Main menu entries
 		$this->menus = array(); // List of menus to add
-
 	}
 
 	/**
@@ -298,7 +296,7 @@ class modSubtotal extends DolibarrModules
 
 		$extra = new ExtraFields($db); // propaldet, commandedet, facturedet
 		$TElementType = array('propaldet', 'commandedet', 'facturedet', 'supplier_proposaldet', 'commande_fournisseurdet', 'facture_fourn_det');
-		foreach($TElementType as $element_type) {
+		foreach ($TElementType as $element_type) {
 			$extra->addExtraField('show_total_ht', 'Afficher le Total HT sur le sous-total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 			$extra->addExtraField('show_reduc', 'Afficher la réduction sur le sous-total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);
 			$extra->addExtraField('subtotal_show_qty', 'Afficher la Quantité du Sous-Total', 'int', 0, 10, $element_type, 0, 0, '', unserialize('a:1:{s:7:"options";a:1:{s:0:"";N;}}'), 0, '', 0, 1);

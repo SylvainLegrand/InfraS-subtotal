@@ -1087,10 +1087,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	 * @return array|float|int
 	 */
 	function getTotalLineFromObject(&$object, &$line, $use_level=false, $return_all=0) {
-		global $conf, $db;	// InfraS change
-
 		$rang = $line->rang;
-		$qty_line = $line->qty;
 		$lvl = 0;
         if (TSubtotal::isSubtotal($line)) $lvl = TSubtotal::getNiveau($line);
 
@@ -1105,12 +1102,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		$multicurrency_total_ht = 0;	// InfraS add
 		$multicurrency_total_ttc = 0;	// InfraS add
 
-
 		$sign=1;
 		if (isset($object->type) && $object->type == 2 && getDolGlobalString('INVOICE_POSITIVE_CREDIT_NOTE')) $sign=-1;
-
-		if (GETPOST('action', 'none') == 'builddoc') $builddoc = true;
-		else $builddoc = false;
 
 		dol_include_once('/subtotal/class/subtotal.class.php');
 
@@ -1123,8 +1116,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		// InfraS add begin
 		$listOuvrages	= array();
 		if (!empty(isModEnabled('ouvrage'))) {
-			$ouvrageMod = new modOuvrage($this->db);
-			// first loop to record all ouvrages
+			// loop over the lines above the current total line
+			$ouvrageMod = new modOuvrage($this->db); 		// Easya add 
 			foreach($TLineReverse as $l) {
 				$isOuvrage	= Ouvrage::isOuvrage($l) ? 1 : 0;	// ouvrage ??
 				if (!empty($title_break) && $title_break->id == $l->id) break;	// We go back from the end to the beginning, so when we find the associated title we stop
@@ -1134,7 +1127,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			}
 		}
 		// InfraS add end
-
 		foreach($TLineReverse as $l)
 		{
 			$l->total_ttc = doubleval($l->total_ttc);
@@ -1143,124 +1135,120 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			$l->multicurrency_total_ttc = doubleval($l->multicurrency_total_ttc);	// InfraS add
 			$isOuvrage	= !empty(isModEnabled('ouvrage')) && Ouvrage::isOuvrage($l) ? 1 : 0;	// InfraS add
 
-			//print $l->rang.'>='.$rang.' '.$total.'<br/>';
             if ($l->rang>=$rang) continue;
             if (!empty($title_break) && $title_break->id == $l->id) break;
             elseif (!TSubtotal::isModSubtotalLine($l) && empty($isOuvrage))	// InfraS change
             {
-				$totalQty	= !empty($listOuvrages) && !empty($l->fk_parent_line) && array_key_exists($l->fk_parent_line, $listOuvrages) ? $listOuvrages[$l->fk_parent_line] : 1;	// InfraS change
+				$totalQty	= !empty($listOuvrages) && !empty($l->fk_parent_line) && array_key_exists($l->fk_parent_line, $listOuvrages) ? $listOuvrages[$l->fk_parent_line] : 1;	// InfraS add
 				$total_qty += $l->qty;
-               // TODO retirer le test avec $builddoc quand Dolibarr affichera le total progression sur la card et pas seulement dans le PDF
-                if ($builddoc && $object->element == 'facture' && $object->type==Facture::TYPE_SITUATION)
+                if ($object->element == 'facture' && $object->type==Facture::TYPE_SITUATION)
                 {
-					$sitFacTotLineAvt	= isset($conf->global->INFRASPLUS_PDF_SITFAC_TOTLINE_AVT) ? $conf->global->INFRASPLUS_PDF_SITFAC_TOTLINE_AVT : 0;	// InfraS add
+					$sitFacTotLineAvt	= getDolGlobalInt('INFRASPLUS_PDF_SITFAC_TOTLINE_AVT', 0);	// InfraS add
+					// 1 = (legacy mode): situation_percent is cumulative (state at situation)
+					// 2 = (new mode): situation_percent is non-cumulative (delta of current situation)
+					$isCumulative = getDolGlobalInt('INVOICE_USE_SITUATION') === 1;
+
                     if ($l->situation_percent > 0 && !empty($l->total_ht) && empty($sitFacTotLineAvt))	// InfraS change
                     {
-                        $prev_progress = 0;
-                        $progress = 1;
-                        if (method_exists($l, 'get_prev_progress'))
-                        {
-                            $prev_progress = $l->get_prev_progress($object->id);
-                            $progress = ($l->situation_percent - $prev_progress) / 100;
-                        }
+                        $prev_progress = method_exists($l, 'get_prev_progress') ? $l->get_prev_progress($object->id) : 0;
 
-						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) { 
-							$result = $sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress;  // Easya add 
+				// OPENDSI : many conflicts during a merge from upstream.
+						// If a bug found in this part, refer to the commit to sse what was the state before, or refer to the upstream branch.
+						// The changes of Opendsi refer to the compatibility with Subtotal from Inovea.
+
+						if ($isCumulative) {
+							// legacy mode: $l->situation_percent = cumulative progress within the cycle
+							$progressState = $l->situation_percent;
+							$progressDelta = $progressState - $prev_progress;
+							$progressRatio = $progressDelta / $progressState;
+							$lineTotalHT = $sign * $l->total_ht * $progressRatio;
+							$lineTotalTVA = $sign * $l->total_tva * $progressRatio;
+							$lineTotalTTC = $sign * $l->total_ttc * $progressRatio;
+							$lineMulticurrencyTotalHT = $sign * $l->multicurrency_total_ht * $progressRatio;	// InfraS add
+							$lineMulticurrencyTotalTTC = $sign * $l->multicurrency_total_ttc * $progressRatio;	// InfraS add
 						} else {
-							$result = ($sign * ($l->total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
+							// new mode: $l->situation_percent = progress delta of this situation invoice
+							// the delta (=non-cumulative) values are stored directly on the line
+							$lineTotalHT = $l->total_ht;
+							$lineTotalTVA = $l->total_tva;
+							$lineTotalTTC = $l->total_ttc;
+							$lineMulticurrencyTotalHT = $l->multicurrency_total_ht;	// InfraS add
+							$lineMulticurrencyTotalTTC = $l->multicurrency_total_ttc;	// InfraS add
 						}
-
-                        $total+= $result;
-
+                        $total += $lineTotalHT;
+						$total_tva += $lineTotalTVA;
+						$total_ttc += $lineTotalTTC;
+						$TTotal_tva[$l->tva_tx] += $lineTotalTVA;
+						$multicurrency_total_ht += $lineMulticurrencyTotalHT;	// InfraS add
+						$multicurrency_total_ttc += $lineMulticurrencyTotalTTC;	// InfraS add
+                    } elseif ($l->product_type != 9) {	// InfraS add begin
 						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {  // Easya add 
-							if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress);
-							if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress);
-							if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress);
-							if ($l->multicurrency_total_ht != 0)	$multicurrency_total_ht += ($sign * ($l->multicurrency_total_ht / ($l->situation_percent / 100)) * $progress);	// InfraS add
-							if ($l->multicurrency_total_ttc != 0)	$multicurrency_total_ttc += ($sign * ($l->multicurrency_total_ttc / ($l->situation_percent / 100)) * $progress);	// InfraS add
+							$total += $l->total_ht;
+							$total_tva += $l->total_tva;
+							$TTotal_tva[$l->tva_tx] += $l->total_tva;
+							$total_ttc += $l->total_ttc;
+							$multicurrency_total_ht += $l->multicurrency_total_ht;	// InfraS add
+							$multicurrency_total_ttc += $l->multicurrency_total_ttc;	// InfraS add
 						} else {
-							// TODO check si les 3 lignes du dessous sont corrects
-							if ($l->situation_percent != 0)	$total_tva += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-							if ($l->situation_percent != 0)	$TTotal_tva[$l->tva_tx] += ($sign * ($l->total_tva / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-							if ($l->total_ttc != 0)	$total_ttc += ($sign * ($l->total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS change
-							if ($l->multicurrency_total_ht != 0)	$multicurrency_total_ht += ($sign * ($l->multicurrency_total_ht / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
-							if ($l->multicurrency_total_ttc != 0)	$multicurrency_total_ttc += ($sign * ($l->multicurrency_total_ttc / ($l->situation_percent / 100)) * $progress) * $totalQty;	// InfraS add
-						}
-                    }
-					else {	// InfraS add begin
-						if ($l->product_type != 9) {
-							if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {  // Easya add 
-								$total += $l->total_ht;
-								$total_tva += $l->total_tva;
-								$TTotal_tva[$l->tva_tx] += $l->total_tva;
-								$total_ttc += $l->total_ttc;
-								$multicurrency_total_ht += $l->multicurrency_total_ht;	// InfraS add
-								$multicurrency_total_ttc += $l->multicurrency_total_ttc;	// InfraS add
-							} else {
-								$total += $l->total_ht * $totalQty;
-								$total_tva += $l->total_tva * $totalQty;
-								$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
-								$total_ttc += $l->total_ttc * $totalQty;
-								$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
-								$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
-							}
+							$total += $l->total_ht * $totalQty;
+							$total_tva += $l->total_tva * $totalQty;
+							$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
+							$total_ttc += $l->total_ttc * $totalQty;
+							$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
+							$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
 						}
 					}
 					// InfraS add end
-                }
-                else
-                {
-					if ($l->product_type != 9) {
-						if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {   // Easya add 
-							$total += $l->total_ht;
-							$total_tva += $l->total_tva;
-							$multicurrency_total_ht += $l->multicurrency_total_ht;	// InfraS add
+			} elseif ($l->product_type != 9) {
+				if ($ouvrageMod && $ouvrageMod->family === $inoveaFamily) {   // Easya add 
+					$total += $l->total_ht;
+					$total_tva += $l->total_tva;
+					$multicurrency_total_ht += $l->multicurrency_total_ht;	// InfraS add
 
-							if(! isset($TTotal_tva[$l->tva_tx])) {
-								$TTotal_tva[$l->tva_tx] = 0;
-							}
-							$TTotal_tva[$l->tva_tx] += $l->total_tva;
-
-							$total_ttc += $l->total_ttc;
-							$multicurrency_total_ttc += $l->multicurrency_total_ttc;	// InfraS add
-							// InfraS add begin
-							$vatrate = (string) $l->tva_tx;
-							if (($l->info_bits & 0x01) == 0x01) {
-								$vatrate .= '*';
-							}
-							$vatcode = $l->vat_src_code;
-							if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
-								$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
-							}
-							$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
-							// InfraS add end
-						} else {
-							$total += $l->total_ht * $totalQty;	// InfraS change
-							$total_tva += $l->total_tva * $totalQty;	// InfraS change
-							$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
-
-							if(! isset($TTotal_tva[$l->tva_tx])) {
-								$TTotal_tva[$l->tva_tx] = 0;
-							}
-							$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
-
-							$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
-							$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
-							// InfraS add begin
-							$vatrate = (string) $l->tva_tx;
-							if (($l->info_bits & 0x01) == 0x01) {
-								$vatrate .= '*';
-							}
-							$vatcode = $l->vat_src_code;
-							if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
-								$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
-							}
-							$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
-							// InfraS add end
-						} 
+					if(! isset($TTotal_tva[$l->tva_tx])) {
+						$TTotal_tva[$l->tva_tx] = 0;
 					}
+					$TTotal_tva[$l->tva_tx] += $l->total_tva;
+
+					$total_ttc += $l->total_ttc;
+					$multicurrency_total_ttc += $l->multicurrency_total_ttc;	// InfraS add
+					// InfraS add begin
+					$vatrate = (string) $l->tva_tx;
+					if (($l->info_bits & 0x01) == 0x01) {
+						$vatrate .= '*';
+					}
+					$vatcode = $l->vat_src_code;
+					if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
+						$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
+					}
+					$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
+					// InfraS add end
+				} else {
+					$total += $l->total_ht * $totalQty;	// InfraS change
+					$total_tva += $l->total_tva * $totalQty;	// InfraS change
+					$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
+
+					if(! isset($TTotal_tva[$l->tva_tx])) {
+						$TTotal_tva[$l->tva_tx] = 0;
+					}
+					$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;	// InfraS change
+
+					$total_ttc += $l->total_ttc * $totalQty;	// InfraS change
+					$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
+					// InfraS add begin
+					$vatrate = (string) $l->tva_tx;
+					if (($l->info_bits & 0x01) == 0x01) {
+						$vatrate .= '*';
+					}
+					$vatcode = $l->vat_src_code;
+					if (empty($TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'])) {
+						$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] = 0;
+					}
+					$TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate' => $vatrate, 'vatcode' => $vatcode, 'amount' => $TTotal_tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $l->total_tva, 'base' => $total);
+					// InfraS add end
                 }
             }
+			// END OPENDSI : many conflicts during a merge from upstream.
 		}
 		if (!$return_all) return $total;
 		else return array($total, $total_tva, $total_ttc, $TTotal_tva, $total_qty, $TTotal_tva_array, $multicurrency_total_ht, $multicurrency_total_ttc);	// InfraS change
@@ -2938,13 +2926,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		}
 		elseif($object->element == 'shipping' || $object->element == 'delivery')
 		{
-			if(empty($line->origin_line_id) && (! empty($line->fk_elementdet || ! empty($line->fk_elementdet))))
+			if(empty($line->origin_line_id) && ! empty($line->fk_elementdet ))	// InfraS change
 			{
 				$line->origin_line_id = $line->fk_elementdet ?? $line->fk_elementdet;
 			}
 
 			$originline = new OrderLine($db);
-			$originline->fetch($line->fk_elementdet ?? $line->fk_elementdet);
+			$originline->fetch($line->origin_line_id ?? $line->origin_line_id);	// InfraS change
 
 			foreach(get_object_vars($line) as $property => $value)
 			{
@@ -2990,12 +2978,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			if($object->element == 'invoice_supplier') $colspan = 4;	// InfraS change
 			if($object->element == 'supplier_proposal') $colspan = 3;
 
-			// MODIF BY OPENDSI TO FIX COLUMN PU TTC
 			if (!empty($inputalsopricewithtax) && !getDolGlobalInt('MAIN_NO_INPUT_PRICE_WITH_TAX')) {
 				$colspan++; // Ajout de la colonne PU TTC
 			}
-			// END MODIF BY OPENDSI
-
 
 			if($object->element == 'facturerec' ) $colspan = 5;
 
@@ -3018,29 +3003,32 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
             $data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
             // Prepare CSS class
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 			?>
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
 			<tr class="oddeven <?php echo $class; ?>" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3479,10 +3467,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			}
 
 			if ($num > 1 && empty($conf->browser->phone)) { ?>
-			<td align="center" class="linecolmove tdlineupdown">
+			<td class="center linecolmove tdlineupdown">	<!-- InfraS change -->
 			</td>
 			<?php } else { ?>
-			<td align="center"<?php echo ((empty($conf->browser->phone) && ($object->statut == 0  && $createRight ))?' class="tdlineupdown"':''); ?>></td>
+			<td <?php echo ((empty($conf->browser->phone) && ($object->statut == 0  && $createRight ))?' class="center tdlineupdown"':' class="center"'); ?>></td>	<!-- InfraS change -->
 			<?php } ?>
 
 
@@ -3589,15 +3577,19 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// HTML 5 data for js
 			$data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 ?>
 
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
@@ -3605,14 +3597,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3719,29 +3710,32 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 			// HTML 5 data for js
 			$data = $this->_getHtmlData($parameters, $object, $action, $hookmanager);
 
-            $class													= '';
-            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT')))		$class	.= ' newSubtotal ';
-            if ($line->qty == 1)									$class	.= ' subtitleLevel1';	// Title level 1
-            elseif ($line->qty == 2)								$class	.= ' subtitleLevel2';	// Title level 2
-            elseif ($line->qty > 2 && $line->qty < 10)				$class	.= ' subtitleLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 99)								$class	.= ' subtotalLevel1';	// Sub-total level 1
-            elseif ($line->qty == 98)								$class	.= ' subtotalLevel2';	// Sub-total level 2
-            elseif ($line->qty > 90 && $line->qty < 98)				$class	.= ' subtotalLevel3to9';	// Sub-total level 3 to 9
-            elseif ($line->qty == 50)								$class	.= ' subtotalText';      // Free text
+			// InfraS change begin
+            $class	= '';
+            if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+				$class	.= ' newSubtotal';
+			}
+            if ($line->qty > 0 && $line->qty < 10) {
+				$class	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+			} elseif ($line->qty > 90 && $line->qty < 100) {
+				$class	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+			} elseif ($line->qty == 50) {
+				$class	.= ' subtotalText';	// Free text
+			}
+			// InfraS change end
 			?>
 			<!-- actions_subtotal.class.php line <?php echo __LINE__; ?> -->
 			<tr class="oddeven" <?php echo $data; ?> rel="subtotal" id="row-<?php echo $line->id ?>" style="<?php
 					if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 					{
 						// InfraS change begin
+						$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
 						if ($line->qty <= 99 && $line->qty >= 91) {
-							$subtotalBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (20 - (109 - $line->qty)) / 10;
-							print 'background:rgba('.implode(',', $subtotalBackgroundColor).', '.$opacity.');';
+							$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty >= 1 && $line->qty <= 9) {
-							$titleBackgroundColor = colorStringToArray(getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf'));
-							$opacity = (11 - $line->qty) / 10;
-							print 'background:rgba('.implode(',', $titleBackgroundColor).', '.$opacity.');';
+							$titleBackgroundColor = getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+							print 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
 						} elseif ($line->qty == 50) {	// Free text
 							print '';
 						}
@@ -3887,17 +3881,33 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				else if (TSubtotal::isFreeText($line)) $object->tpl['sub-type'] = 'freetext';
 
 				$object->tpl['sub-tr-style'] = '';
+				// Prepare CSS class
+				// InfraS add begin
+					$object->tpl['sub-tr-class'] = '';
+            	if (!empty(getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))) {
+					$object->tpl['sub-tr-class']	.= ' newSubtotal';
+				}
+            	if ($line->qty > 0 && $line->qty < 10) {
+					$object->tpl['sub-tr-class']	.= ' subtitleLevel'.$line->qty;	// Sub-total level 1 to 9
+				} elseif ($line->qty > 90 && $line->qty < 100) {
+					$object->tpl['sub-tr-class']	.= ' subtotalLevel'.(100 - $line->qty);	// Sub-total level 99 (1) to 91 (9)
+				} elseif ($line->qty == 50) {
+					$object->tpl['sub-tr-class']	.= ' subtotalText';	// Free text
+				}
+				// InfraS add end
 				if (getDolGlobalString('SUBTOTAL_USE_NEW_FORMAT'))
 				{
 					// InfraS change begin
-					if($line->qty==99) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf').';';          // Sub-total level 1
-					else if($line->qty==98) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#ddddff').';';    // Sub-total level 2
-					else if($line->qty<=97 && $line->qty>=91) print 'background:'.getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#eeeeff').';';  // Sub-total level 3 to 9
-					else if($line->qty==1) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf').';';     // Title level 1
-					else if($line->qty==2) print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#ddddff').';';     // Title level 2
-					else if($line->qty==50) print '';                       // Free text
-					else print 'background:'.getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#eeeeff').';';                       // Title level 3 to 9
-
+					$subtotalBrightnessPercentage = getDolGlobalInt('SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE', 10);
+					if ($line->qty <= 99 && $line->qty >= 91) {
+						$subtotalBackgroundColor = getDolGlobalString('SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR', '#adadcf');
+						$object->tpl['sub-tr-style']	= 'background: none; background-color:'.colorLighten( $subtotalBackgroundColor, ($line->qty < 99 ? (99 - $line->qty) * $subtotalBrightnessPercentage : 1)).' !important';
+					} elseif ($line->qty >= 1 && $line->qty <= 9) {
+						$titleBackgroundColor	= getDolGlobalString('SUBTOTAL_TITLE_BACKGROUNDCOLOR', '#adadcf');
+						$object->tpl['sub-tr-style'] = 'background: none; background-color:'.colorLighten( $titleBackgroundColor, ($line->qty > 1 ? ($line->qty - 1) * $subtotalBrightnessPercentage : 1)).' !important';
+					} elseif ($line->qty == 50) {	// Free text
+						$object->tpl['sub-tr-style']	= '';
+					}
 					// InfraS change end
 				}
 				else

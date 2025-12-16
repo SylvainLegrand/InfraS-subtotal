@@ -119,8 +119,10 @@ Error_subtotal_delete_line=Error when deleting a line from the subtotal module
 ErrorLoadingLinesFromLinkedOrder=Error while loading the command lines associated with the shipment
 ErrorLoadingLinkedOrder=Error while loading the order associated with shipping
 ErrorNoLinkedOrder=no associated command
-SUBTOTAL_TITLE_BACKGROUNDCOLOR=Background color used on PDFs for titles
-SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR=Background color used on PDFs for subtotals
+SUBTOTAL_TITLE_BACKGROUNDCOLOR=Background color used for titles
+SUBTOTAL_SUBTOTAL_BACKGROUNDCOLOR=Background color used for subtotals
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE = Percentage reduction in brightness between each level of titles / subtitles / subtotals
+SUBTOTAL_TITLE_AND_SUBTOTAL_BRIGHTNESS_PERCENTAGE_info = The colors chosen above will be those of level 1 and the lower levels will be lighter according to this percentage (level 1 = chosen color, level 2 = chosen color - percentage, level 3 = chosen color - 2*percentage, etc.)
 SUBTOTAL_USE_NEW_FORMAT_HELP=By activating this option, new features and behaviors appear.<br/>Among the new behaviors : <ul><li>Adds the notion of title level and subtotal</li></ul>
 SUBTOTAL_LIST_OF_EXTRAFIELDS_PROPALDET=Additional fields available on the titles in the customer sales proposals
 SUBTOTAL_LIST_OF_EXTRAFIELDS_COMMANDEDET=Additional fields available on titles in customer orders
