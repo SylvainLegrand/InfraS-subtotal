@@ -1121,15 +1121,16 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						$total_tva += $lineTotalTVA;
 						$total_ttc += $lineTotalTTC;
 						$TTotal_tva[$l->tva_tx] += $lineTotalTVA;
-						$multicurrency_total_ht += $lineMulticurrencyTotalHT;	// InfraS add
-						$multicurrency_total_ttc += $lineMulticurrencyTotalTTC;	// InfraS add
-                    } elseif ($l->product_type != 9) {	// InfraS add begin
+						// InfraS add begin
+						$multicurrency_total_ht += $lineMulticurrencyTotalHT;
+						$multicurrency_total_ttc += $lineMulticurrencyTotalTTC;
+                    } elseif ($l->product_type != 9) {
 						$total += $l->total_ht * $totalQty;
 						$total_tva += $l->total_tva * $totalQty;
 						$TTotal_tva[$l->tva_tx] += $l->total_tva * $totalQty;
 						$total_ttc += $l->total_ttc * $totalQty;
-						$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;	// InfraS add
-						$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;	// InfraS add
+						$multicurrency_total_ht += $l->multicurrency_total_ht * $totalQty;
+						$multicurrency_total_ttc += $l->multicurrency_total_ttc * $totalQty;
 					}
 					// InfraS add end
 				} elseif ($l->product_type != 9) {
@@ -1585,6 +1586,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
 
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
+
 			if ($this->subtotal_sum_qty_enabled === true) {
 				$line_qty = intval($line->qty);
 
@@ -1682,8 +1685,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 		global $conf, $hideprices, $hookmanager, $hidedetails, $langs;
 
-		if (is_array($parameters)) $i = &$parameters['i'];
-		else $i = (int)$parameters;
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
 
 		if ($this->isModSubtotalLine($parameters, $object)) {
 
@@ -1727,6 +1730,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				}
 			}
 			// InfraS add end
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
+
 			$this->resprints = ' ';
 
 
@@ -1822,12 +1827,13 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		return $defaultReturn;
 	}
 
-	function pdf_getlinetotalwithtax($parameters=array(), &$object, &$action='')
+	function pdf_getlinetotalwithtax($parameters = array(), &$object, &$action = '')
 	{
 		global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
-		if(is_array($parameters)) $i = & $parameters['i'];	// InfraS add
-		else $i = (int)$parameters;	// InfraS add
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
+
 		if ($this->isModSubtotalLine($parameters, $object)) {
 
 			// InfraS add begin
@@ -1864,6 +1870,8 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				}
 			}
 			// InfraS add end
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
+
 			$this->resprints = ' ';
 
 
@@ -1888,7 +1896,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 		global $conf;
 
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
+
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 			$this->resprints = ' ';
 
 			return 1;
@@ -1912,13 +1924,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 	    global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
-		if (is_array($parameters)) $i = &$parameters['i'];
-		else $i = (int)$parameters;
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
 
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 			$this->resprints = ' ';
-
-			$line = $object->lines[$i];
 
 			// On récupère les montants du bloc pour les afficher dans la ligne de sous-total
 			if (TSubtotal::isSubtotal($line)) {
@@ -1980,13 +1991,12 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 	    global $conf, $hidesubdetails, $hideprices, $hookmanager, $langs;	// InfraS change
 
-		if (is_array($parameters)) $i = &$parameters['i'];
-		else $i = (int)$parameters;
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
 
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 			$this->resprints = ' ';
-
-			$line = $object->lines[$i];
 
 			// Affichage de la remise
 			if (TSubtotal::isSubtotal($line)) {
@@ -2029,7 +2039,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 		global $conf, $hidesubdetails, $hideprices;	// InfraS change
 
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
+
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 			$this->resprints = ' ';
 
 
@@ -2056,6 +2070,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 	    global $conf, $hidesubdetails, $hideprices, $hookmanager;	// InfraS change
 
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
+
 //		// Dans le cas des notes de frais report ne pas traiter
 //		// TODO : peut être faire l'inverse : limiter à certains elements plutot que le faire pour tous ... à voir si un autre PB du genre apparait.
 		$TContext	= explode(':', $parameters['context']);	// InfraS add
@@ -2078,6 +2095,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				|| (!empty($object->lines[$i]->array_options['options_print_condensed']) && $object->lines[$i]->array_options['options_print_condensed'] > 0))))) {
 				$this->resprints = vatrate($tva_unique, true);
 			} else {
+				if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 				$this->resprints = ' ';
 			}
 			return 1;
@@ -2131,7 +2149,11 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	{
 		global $conf;
 
+		$i = intval($parameters['i']);
+		$line = isset($object->lines[$i]) ? $object->lines[$i] : null;
+
 		if ($this->isModSubtotalLine($parameters, $object)) {
+			if ($line && $line->qty == -99) { $this->resprints = ' '; return 1; }
 			$this->resprints = ' ';
 			return 1;
 
@@ -2366,7 +2388,6 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 	//                        $TTitle = TSubtotal::getParentTitleOfLine($object, $line->rang);
 	//                        $parentTitle = array_shift($TTitle);
 	//                        if(! empty($parentTitle->id) && ! empty($parentTitle->array_option['options_show_total_ht'])) {
-	//                            exit('la?');
 	//                            $line->remise_percent = 100;    // Affichage de la réduction sur la ligne de sous-total
 	//                            $line->update();
 	//                        }
@@ -2417,8 +2438,25 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						} else {
 
 							if($line->product_type==9 && $line->rowid>0) {
+								// Inject invisible VAT lines here
+								if (!empty($line->TTotal_tva)) {
+									foreach ($line->TTotal_tva as $vatrate => $vatamount) {
+										$vatLine = clone $line;
+										$vatLine->qty = -99;
+										$vatLine->tva_tx = $vatrate;
+										$vatLine->total_tva = $vatamount;
+										$vatLine->total_ht = 0;
+										$vatLine->total_ttc = 0;
+										$vatLine->TTotal_tva = null; // Clear to avoid recursion/confusion
+										$TLines[] = $vatLine;
+									}
+								}
+
+								$lineForDisplay = clone $line;
+								$lineForDisplay->TTotal_tva = null;
+								$lineForDisplay->total_tva = 0;
 								// ajoute la ligne de sous-total
-								$TLines[] = $line;
+								$TLines[] = $lineForDisplay;
 							}
 						}
 
@@ -2524,7 +2562,9 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 				$description = '';
 			}
 
-			if ($line->qty > 90) {
+			if ($line->qty == -99) {
+				return 1;
+			} elseif ($line->qty > 90) {
 				if (getDolGlobalString('CONCAT_TITLE_LABEL_IN_SUBTOTAL_LABEL')) {
 					$label .= ' ' . $this->getTitle($object, $line);
 				}

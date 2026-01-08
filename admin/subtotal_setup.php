@@ -169,7 +169,7 @@ $item->fieldAttr['placeholder'] = 'BU';
 $item = $formSetup->newItem('SUBTOTAL_TEXT_LINE_STYLE');
 $item->fieldAttr['placeholder'] = '';
 
-// Taille des titres (égale à 9 si non renseignée)
+// Style des titres (B = gras, U = souligné, I = italique)
 $item = $formSetup->newItem('SUBTOTAL_TITLE_SIZE');
 $item->helpText = $langs->transnoentities('SUBTOTAL_TITLE_SIZE_info');
 
