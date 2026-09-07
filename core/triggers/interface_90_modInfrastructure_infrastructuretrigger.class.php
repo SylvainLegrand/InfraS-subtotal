@@ -387,6 +387,16 @@
 			if (empty($infrastructure_add_title_bloc_from_orderstoinvoice)) {
 				return;
 			}
+			$isOrderTitle	= TInfrastructure::isTitle($object);
+			$isOrderTotal	= TInfrastructure::isTotal($object);
+			if ($isOrderTitle || $isOrderTotal) {
+				$object->qty	+= $isOrderTitle ? 1 : -1;
+				if ($is_supplier) {
+					$object->update(1);
+				} else {
+					$object->update($user, 1);
+				}
+			}
 			if ($object->origin == 'order_supplier') {
 				$current_fk_commande	= $object->origin_id;
 			} else {

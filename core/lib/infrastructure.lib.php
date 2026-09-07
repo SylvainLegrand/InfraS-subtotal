@@ -253,7 +253,7 @@
 								'InfrastructureOptions'					=> $langs->trans('InfrastructureOptions'),
 								'UseHiddenConfToAutoCheck'				=> $langs->trans('InfrastructureUseHiddenConfToAutoCheck'),
 							],
-						'isModShippingEnable' 									=> isModEnabled('expedition'),
+						'isModShippingEnable' 										=> isModEnabled('expedition'),
 						'INFRASTRUCTURE_DEFAULT_CHECK_SHIPPING_LIST_FOR_TITLE_DESC'	=> getDolGlobalInt('INFRASTRUCTURE_DEFAULT_CHECK_SHIPPING_LIST_FOR_TITLE_DESC')
 					];
 		?>
