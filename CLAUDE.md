@@ -19,7 +19,7 @@ Informations module (issues du code et du changelog local) :
 - Licence : GPL v3+
 - Compatibilité Dolibarr : `21.0.0` à `24.x.x`
 - Compatibilité PHP : `7.4` à `8.4`
-- Dernière version locale : `21.8.0` (2026-07)
+- Dernière version locale : `21.8.1` (2026-09)
 - Schéma de numérotation : depuis `18.1.0`, le module aligne sa version majeure sur la version minimale de Dolibarr supportée (même convention que `infraspackplus`). Format : `<dolibarrMin>.<mineur>.<patch>`. Les versions antérieures (jusqu'à `3.30.1`) suivaient une numérotation indépendante.
 - Dépendance obligatoire : aucune
 - Conflit : module **Milestone/Jalon** (iNodbox) — les deux modules ne peuvent pas être activés simultanément
@@ -735,7 +735,7 @@ Pour garantir l'affichage de la colonne « Opt » dès lors qu'`INFRASTRUCTURE_M
 
 ```xml
 <changelog>
-    <Version Number="21.1.1" MonthVersion="2026-06">
+    <Version Number="21.8.1" MonthVersion="2026-09">
         <change type='add'>Added feature description.</change>
         <change type='chg'>Changed feature description.</change>
         <change type='fix'>Fixed bug description.</change>

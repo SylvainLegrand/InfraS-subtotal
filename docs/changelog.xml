@@ -565,7 +565,10 @@
 		<change type='chg'>Ligne de sous-total (INFRASTRUCTURE_DISPLAY_MARGIN_ON_TOTAL, core/tpl/infrastructureline_total.tpl.php) : la marge brute du bloc n'est plus affichée systématiquement dans la colonne montant (native PA HT) — elle n'était plus nécessaire dès lors que le taux de marge et/ou le taux de marque (21.7.2) permettent déjà de juger la rentabilité du bloc. La colonne montant reste vide par défaut ; voir la nouvelle option ci-dessous pour y afficher le prix de revient total à la place.</change>
 		<change type='add'>Nouvelle option de configuration INFRASTRUCTURE_DISPLAY_COST_PRICE_ON_TOTAL (section « PARAMÈTRES DIVERS », juste après INFRASTRUCTURE_DISPLAY_MARGIN_ON_TOTAL dont elle dépend — masquée si celle-ci est inactive) : si activée, affiche le prix de revient total cumulé du bloc dans la colonne montant de la ligne de sous-total, à la place de l'ancien affichage de la marge brute. Désactivée par défaut.</change>
 	</Version>
-	<InfraS Downloaded="20260724"/>
+	<Version Number="21.8.1" MonthVersion="2026-09">
+		<change type='chg'>Décaler les lignes de commandes ayant des titres et des sous-totaux lors de la facturation en masse si l'option MAIN_ORDERLIST_CREATEBILLS_ONEBYTHIRD est activée.</change>
+	</Version>
+	<InfraS Downloaded="20260907"/>
 	<Dolibarr minVersion="21.0.0" maxVersion="24.x.x"/>
 	<PHP minVersion="7.4" maxVersion="8.4"/>
 </changelog>
