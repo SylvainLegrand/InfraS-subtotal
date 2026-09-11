@@ -683,6 +683,41 @@
 		}
 
 		/**
+		*	Recalcule le tableau des marges de la fiche (FormMargin::displayMarginInfos) en excluant
+		*	les lignes optionnelles (special_code = 3), par cohérence avec updateTotalPrice() qui les
+		*	exclut déjà du total du document. Le calcul natif FormMargin::getMarginInfosArray() est
+		*	réutilisé tel quel sur une copie de l'objet privée de ces lignes : $parameters['marginInfo']
+		*	est passé par référence par le core et modifié en place.
+		*
+		*	@param	array			$parameters		Parameters (marginInfo par référence)
+		*	@param	CommonObject	$object			Document parent (Propal, Commande, Facture, ...)
+		*	@param	string			$action			Action
+		*	@param	HookManager		$hookmanager	Hook manager
+		*	@return	int								0 = continuer le code standard (affichage natif avec marginInfo corrigé)
+		**/
+		public function displayMarginInfos($parameters, &$object, &$action, HookManager $hookmanager)
+		{
+			if (!getDolGlobalString('INFRASTRUCTURE_MANAGE_OL')) return 0;
+			if (empty($object->lines) || ! is_array($object->lines) || !isset($parameters['marginInfo'])) return 0;
+			// Lignes à conserver pour le calcul des marges : tout sauf les lignes OL (special_code = 3)
+			$TLines	= array();
+			$hasOl	= false;
+			foreach ($object->lines as $line) {
+				if (!TInfrastructure::isModInfrastructureLine($line) && (int) $line->special_code == 3) {
+					$hasOl = true;
+					continue;
+				}
+				$TLines[] = $line;
+			}
+			if (!$hasOl) return 0; // Pas de lignes OL : laisser le calcul natif inchangé
+			$clone			= clone $object;
+			$clone->lines	= $TLines;
+			dol_include_once('/core/class/html.formmargin.class.php');
+			$formmargin					= new FormMargin($this->db);
+			$parameters['marginInfo']	= $formmargin->getMarginInfosArray($clone, false);
+			return 0;
+		}
+		/**
 		* Change rounding mode
 		*
 		* @param	array			$parameters		Parameters
