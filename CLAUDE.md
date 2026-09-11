@@ -19,7 +19,7 @@ Informations module (issues du code et du changelog local) :
 - Licence : GPL v3+
 - Compatibilité Dolibarr : `21.0.0` à `24.x.x`
 - Compatibilité PHP : `7.4` à `8.4`
-- Dernière version locale : `21.8.1` (2026-09)
+- Dernière version locale : `21.8.2` (2026-09)
 - Schéma de numérotation : depuis `18.1.0`, le module aligne sa version majeure sur la version minimale de Dolibarr supportée (même convention que `infraspackplus`). Format : `<dolibarrMin>.<mineur>.<patch>`. Les versions antérieures (jusqu'à `3.30.1`) suivaient une numérotation indépendante.
 - Dépendance obligatoire : aucune
 - Conflit : module **Milestone/Jalon** (iNodbox) — les deux modules ne peuvent pas être activés simultanément
@@ -291,6 +291,8 @@ La classe `ActionsInfrastructure` (`class/actions_infrastructure.class.php`) exp
 | `getlinetotalremise` | `pdfgeneration` | Remplacement du calcul de total de remise par ligne |
 | `afterCreationOfRecurringInvoice` | `invoicereccard` | Préserve les structures à la création depuis modèle récurrent |
 | `printCommonFooter` | tous contextes | Injection de scripts communs en pied de page |
+| `updateTotalPrice` | cartes de documents | Si `INFRASTRUCTURE_MANAGE_OL` et au moins une ligne OL (`special_code = 3`) : remplace `update_price()` pour exclure ces lignes des totaux du document |
+| `displayMarginInfos` | cartes de documents | Si `INFRASTRUCTURE_MANAGE_OL` et au moins une ligne OL : recalcule `$parameters['marginInfo']` (passé par référence par `FormMargin::displayMarginInfos()`) via le calcul natif `getMarginInfosArray()` sur une copie du document privée des lignes OL, pour aligner le tableau des marges sur le Montant HT (21.8.2+) |
 
 ### Flux des hooks (Hook workflow)
 

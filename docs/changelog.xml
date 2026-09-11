@@ -568,7 +568,10 @@
 	<Version Number="21.8.1" MonthVersion="2026-09">
 		<change type='chg'>Décaler les lignes de commandes ayant des titres et des sous-totaux lors de la facturation en masse si l'option MAIN_ORDERLIST_CREATEBILLS_ONEBYTHIRD est activée.</change>
 	</Version>
-	<InfraS Downloaded="20260907"/>
+	<Version Number="21.8.2" MonthVersion="2026-09">
+		<change type='fix'>Tableau « Marges » de la fiche document (propositions, commandes, factures et documents fournisseurs) : les lignes optionnelles (case « Opt », INFRASTRUCTURE_MANAGE_OL, special_code = 3) saisies avec une quantité et un montant étaient comptées dans le prix de vente, le prix de revient et la marge, alors que le hook updateTotalPrice() les exclut déjà du Montant HT du document — d'où un « Prix de vente » supérieur au « Montant HT » affiché juste au-dessus. Le calcul natif Dolibarr (FormMargin::getMarginInfosArray) ne filtre pas ces lignes car une option Dolibarr standard a toujours une quantité nulle. Nouveau hook displayMarginInfos() (class/actions_infrastructure.class.php) : quand au moins une ligne OL existe, le tableau des marges est recalculé par le code natif sur une copie du document privée de ces lignes, pour rester aligné sur le Montant HT. Sans ligne OL, rien ne change.</change>
+	</Version>
+	<InfraS Downloaded="20260911"/>
 	<Dolibarr minVersion="21.0.0" maxVersion="24.x.x"/>
 	<PHP minVersion="7.4" maxVersion="8.4"/>
 </changelog>
